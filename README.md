@@ -5,7 +5,7 @@ The project is in a very rudimentary state.
 ## Info
 - Created by: Geert Schulpen
 - Email: g.h.a.schulpen@uu.nl
-- Version: 0.0.1
+- Version: 0.1.0
 
 
 ## Installation
@@ -31,3 +31,6 @@ pip install --upgrade git+https://github.com/GeertUU/SurfaceAnisotropyCalculator
 
 
 ## Changelog
+
+0.1.0
+The `MeshCalculator.cropmesh()` method now actually cleans up verteces that are outside the specified region. 

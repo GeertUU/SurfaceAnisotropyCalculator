@@ -19,33 +19,52 @@ import igl
 
 
 """
-Possible helper function for deleting additional verteces
+Helper function to enable renumbering faces
 """
-# def binarySearchCount(arr, n, key):
+def binarySearchCount(arr, key):
+    """
+    Perform a binary search on a sorted list. Return both wether key is in arr
+    and where it should be inserted to keep the list sorted
 
-#     left = 0
-#     right = n - 1
+    Parameters
+    ----------
+    arr : list
+        Sorted list to be searched.
+    key : scalar with same TYPE as list
+        item to be found.
 
-#     count = 0
+    Returns
+    -------
+    bool
+        Whether key is in arr.
+    integer
+        Index where key should be inserted in arr to keep a sorted array.
 
-#     while (left <= right):
-#         mid = int((right + left) / 2)
+    """
+    n = len(arr)
+    left = 0
+    right = n - 1
 
-#         # Check if middle element is
-#         # less than or equal to key
-#         if (arr[mid] <= key):
+    count = 0
 
-#             # At least (mid + 1) elements are there
-#             # whose values are less than
-#             # or equal to key
-#             count = mid + 1
-#             left = mid + 1
+    while (left <= right):
+        mid = int((right + left) / 2)
 
-#         # If key is smaller, ignore right half
-#         else:
-#             right = mid - 1
+        # Check if we found key
+        if(arr[mid] == key):
+            return True, mid
+        # Check if middle element is less than key
+        elif (arr[mid] < key):
+            # At least (mid + 1) elements exist whose values are less than
+            # or equal to key
+            count = mid + 1
+            left = mid + 1
+        # If key is smaller, ignore right half
+        else:
+            right = mid - 1
 
-#     return count
+    return False, count
+
 
 
 class MeshCalculator():
@@ -184,25 +203,22 @@ class MeshCalculator():
 
     def cropmesh(self, maxx=None, minx=None, maxy=None, miny=None, maxz=None, minz=None):
         """
-        Crop all faces that have at least one vertex outside given region.
+        Crop all verteces that are outside given region. Also removes faces.
         
-        Currently in development, does not edit the verteces list (self.v),
-        only the faces list (self.f).
-
         Parameters
         ----------
         maxx : float, optional
-            Maximum x value to be accepted. The default is None.
+            Maximum x value to be accepted. The default is max(self.v[:,0]).
         minx : float, optional
-            Minimum x value to be accepted. The default is None.
+            Minimum x value to be accepted. The default is min(self.v[:,0]).
         maxy : float, optional
-            Maximum y value to be accepted. The default is None.
+            Maximum y value to be accepted. The default is max(self.v[:,1]).
         miny : float, optional
-            Minimum y value to be accepted. The default is None.
+            Minimum y value to be accepted. The default is min(self.v[:,1]).
         maxz : float, optional
-            Maximum z value to be accepted. The default is None.
+            Maximum z value to be accepted. The default is max(self.v[:,2]).
         minz : float, optional
-            Minimum z value to be accepted. The default is None.
+            Minimum z value to be accepted. The default is min(self.v[:,2]).
 
         Returns
         -------
@@ -225,20 +241,31 @@ class MeshCalculator():
         minima = (minx, miny, minz)
         maxima = (maxx, maxy, maxz)
         
-        unaccept = np.array([i for i, p in enumerate(self.v) if any(p < minima) or any(p > maxima)])
+        myf = []
+        subtract = np.zeros(3)
+        remove = [True, True, True]
+        
+        #make a list of all "external" verteces
+        unaccept = np.array([i for i, p in enumerate(self.v) if
+                                         any(p < minima) or any(p > maxima)])
+
+        for face in self.f:
+        #check for each vertex if it is in unaccept and how many lower indices
+        #are in unaccept. If no vertex is in unaccept calculate new triplet.
+            for i, point in enumerate(face):
+                remove[i], subtract[i] = binarySearchCount(unaccept, point)
+            if not any(remove):
+                myf.append(face - subtract)
+        myf = np.array(myf, dtype=int)
+        
+        """
+        #old implementation that does not delete verteces
         newf = np.array([face for face in self.f if not any(np.isin(face, unaccept))])
-        
-        self.f = newf
-        
         """
-        unaccept = np.array([i for i, p in enumerate(
-             self.v) if any(p < minima) or any(p > maxima)])
-
-        # def mysubstract(triple):
-        #     for coord in triple:
-
-        # newf = np.array([face for face in self.f if not any(np.isin(face, unaccept))])
-        """
+        #delete all "external" verteces
+        self.v = np.delete(self.v, unaccept, axis=0)
+        self.f = myf
+        
         #After changing the mesh one should reset all the performed calculations
         self.resetcalc()
 
