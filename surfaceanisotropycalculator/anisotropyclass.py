@@ -424,7 +424,7 @@ class MeshCalculator():
                            (self.f.z3<minz) | (self.f.z3>maxz)].index, inplace=True)
         
         
-        self.v['newfaces'] = self.v.apply(lambda x: [f for f in x.faces if f in self.f.index])
+        self.v['newfaces'] = self.v.apply(lambda x: [f for f in x.faces if f in self.f.index], axis=1)
         self.v = self.v[self.v['newfaces'].map(lambda d: len(d)) > 0]
         self.v = self.v.drop('faces', axis=1).rename({'newfaces': 'faces'}, axis=1)
         
