@@ -34,4 +34,6 @@ pip install --upgrade git+https://github.com/GeertUU/SurfaceAnisotropyCalculator
 ## Changelog
 
 0.1.0
-The `MeshCalculator.cropmesh()` method now actually cleans up verteces that are outside the specified region. 
+The whole internal structure is changed to allow for more complex calculations. The class now uses Pandas dataframes.
+The minkowski scalars W1 and W3 can now be calculated.
+The `MeshCalculator.cropmesh()` method now actually cleans up verteces that are outside the specified region and removes verteces which are not part of any faces.
