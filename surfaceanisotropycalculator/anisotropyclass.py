@@ -428,6 +428,10 @@ class MeshCalculator():
         self.v = self.v[self.v['newfaces'].map(lambda d: len(d)) > 0]
         self.v = self.v.drop('faces', axis=1).rename({'newfaces': 'faces'}, axis=1)
         
+        self.f['newfaces'] = self.f.apply(lambda x: [f for f in x.neighbors if f in self.f.index], axis=1)
+        self.f = self.f[self.f['newfaces'].map(lambda d: len(d)) > 0]
+        self.f = self.f.drop('neighbors', axis=1).rename({'newfaces': 'neighbors'}, axis=1)
+        
         #After changing the mesh one should reset all the performed calculations
         self.resetcalc()
 
