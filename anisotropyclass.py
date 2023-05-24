@@ -14,8 +14,17 @@
 """
 
 import numpy as np
+import pandas as pd
 
 import igl
+
+#v, f = igl.read_triangle_mesh('C:/Users/5887992/Documents/1_Anisotropy/testingAnisotropy/test.ply')
+"""
+Helper function to iterate over ntuples in an array (wrapping)
+"""
+def ntuples(lst, n):
+    return zip(*[np.concatenate((lst[i:],lst[:i])) for i in range(n)])
+    
 
 
 """
@@ -67,6 +76,7 @@ def binarySearchCount(arr, key):
 
 
 
+
 class MeshCalculator():
     """
     Class to calculate stuff based on a mesh.
@@ -88,15 +98,69 @@ class MeshCalculator():
         None.
 
         """
-        self.v = v
-        self.f = f
+        self.verteces = v
+        self.faces = f
 
         # Collect the maximum and minimum values along the different axes
-        self.maxs = np.max(self.v, axis=0)
-        self.mins = np.min(self.v, axis=0)
+        self.maxs = np.max(self.verteces, axis=0)
+        self.mins = np.min(self.verteces, axis=0)
 
-        # to keep track of what has been calculated we initialize an empty dict
+        # To keep track of what has been calculated we initialize an empty dict
         self.resetcalc()
+        
+        edges = []
+        faces = []
+        lenedges = 0
+        vfaces = [[] for _ in v]
+        vneighbors = [[] for _ in v]
+        vedges = [[] for _ in v]
+        fneighbors = [[] for _ in f]
+        fedges = [[] for _ in f]
+        for numf, face in enumerate(self.faces):
+            thisface = list(face)
+            for v1, v2, v3 in ntuples(face, 3):
+                #register the vertexcoordinates with the face
+                thisface += list(self.verteces[v1])
+                #register the face with the vertex
+                vfaces[v1].append(numf)
+                vneighbors[v1].append([v2,v3])
+                #register the edge with both verteces
+                vedges[v1].append(lenedges)
+                vedges[v2].append(lenedges)
+                #register the edge with the face
+                fedges[numf].append(lenedges)
+                #define the edge
+                edges.append((v1, v2, numf, np.array(self.verteces[v1]),
+                               np.array(self.verteces[v2])))
+                lenedges += 1
+            faces.append(thisface)
+        
+        
+        for i, vn in enumerate( vneighbors):
+            #filter all unique values for indices of neighbors
+            vneighbors[i] = np.unique(np.concatenate(vn)) 
+
+        self.v = pd.DataFrame(v, columns=["x","y","z"])
+        self.v["faces"] = vfaces
+        self.v["neighbors"] = vneighbors
+        self.v["edges"] = vedges
+
+        for numf, face in enumerate(self.faces):
+            #find neighboring faces
+            for v1, v2 in ntuples(face, 2):
+                for neighbor in self.v["faces"][v1]:
+                    if numf != neighbor and v2 in self.faces[neighbor]:
+                        fneighbors[numf].append(neighbor)
+                        
+        self.f = pd.DataFrame(faces, columns=["v1","v2","v3", "x1", 'y1', 'z1', "x2", 'y2', 'z2', "x3", 'y3', 'z3'])
+        self.f["neighbors"] = fneighbors
+        self.f["edges"] = fedges
+        self.e = pd.DataFrame(edges, columns=['v1', 'v2', 'f', 'loc1', 'loc2'])
+                
+        
+                
+                
+                
 
     def resetcalc(self):
         """
@@ -109,20 +173,6 @@ class MeshCalculator():
         """
         self._properties = {}
 
-    def _getverteces(self):
-        """
-        Make a Mx3x3 array with the coordinates of verteces of faces.
-
-        Returns
-        -------
-        None.
-
-        """
-        self.verteces = self.v[self.f]
-        #We make a new key in the _properties dictionary to indicate we
-        #calculated this property
-        self._properties["verteces"] = True
-
     def _getcenters(self):
         """
         Make a Mx3 array of the center (average of the verteces) of every face
@@ -132,10 +182,10 @@ class MeshCalculator():
         None.
 
         """
-        #dict.get(key) returns False if key does not exist in dict.
-        if not self._properties.get("verteces"):
-            self.getverteces
-        self.centers = np.sum(self.verteces, axis=1)/3
+        
+        self.f['xc'] = (self.f.x1 + self.f.x2 + self.f.x3)/3
+        self.f['yc'] = (self.f.y1 + self.f.y2 + self.f.y3)/3
+        self.f['zc'] = (self.f.z1 + self.f.z2 + self.f.z3)/3
         self._properties["centers"] = True
 
     def _getnormals(self):
@@ -148,10 +198,16 @@ class MeshCalculator():
         None.
 
         """
-        if not self._properties.get("verteces"):
-            self._getverteces()
-        self.normals = np.cross(self.verteces[:, 1]-self.verteces[:, 0],
-                                self.verteces[:, 2]-self.verteces[:, 1])
+        #take a cross product manually
+        self.f['xn'] = ((self.f.y2-self.f.y1)*(self.f.z3-self.f.z1)-
+                            (self.f.z2-self.f.z1)*(self.f.y3-self.f.y1))
+        self.f['yn'] = ((self.f.z2-self.f.z1)*(self.f.x3-self.f.x1)-
+                            (self.f.x2-self.f.x1)*(self.f.z3-self.f.z1))
+        self.f['zn'] = ((self.f.x2-self.f.x1)*(self.f.y3-self.f.y1)-
+                            (self.f.y2-self.f.y1)*(self.f.x3-self.f.x1))
+            
+        # self.normals = np.cross(self.verteces[:, 1]-self.verteces[:, 0],
+        #                         self.verteces[:, 2]-self.verteces[:, 1])
         self._properties["normals"] = True
 
     def _getareas(self):
@@ -165,8 +221,66 @@ class MeshCalculator():
         """
         if not self._properties.get("normals"):
             self._getnormals()
-        self.areas = 0.5*np.linalg.norm(self.normals, axis=1)
+        self.f['area'] = 0.5*np.sqrt(self.f.xn**2 + self.f.yn**2 + self.f.zn**2)
         self._properties["areas"] = True
+        
+    def _getinternalangles(self):
+        """
+        Calculate the internal angels for all verteces for every face
+
+        Returns
+        -------
+        None.
+
+        """
+        #The angle between 2 vectors is arccos[(a.b)/((|a||b|)]
+        self.f['a1'] = np.arccos(((self.f.x3-self.f.x1)*(self.f.x2-self.f.x1) +
+                               (self.f.y3-self.f.y1)*(self.f.y2-self.f.y1) +
+                               (self.f.z3-self.f.z1)*(self.f.z2-self.f.z1)) / 
+                              (np.sqrt(((self.f.x3-self.f.x1)**2 + (self.f.y3-self.f.y1)**2
+                                + (self.f.z3-self.f.z1)**2) * 
+                               ((self.f.x2-self.f.x1)**2 + (self.f.y2-self.f.y1)**2
+                                + (self.f.z2-self.f.z1)**2)))
+                             )
+        self.f['a2'] = np.arccos(((self.f.x1-self.f.x2)*(self.f.x3-self.f.x2) +
+                               (self.f.y1-self.f.y2)*(self.f.y3-self.f.y2) +
+                               (self.f.z1-self.f.z2)*(self.f.z3-self.f.z2)) / 
+                              (np.sqrt(((self.f.x1-self.f.x2)**2 + (self.f.y1-self.f.y2)**2
+                                + (self.f.z1-self.f.z2)**2) * 
+                               ((self.f.x3-self.f.x2)**2 + (self.f.y3-self.f.y2)**2
+                                + (self.f.z3-self.f.z2)**2)))
+                             )
+        self.f['a3'] = np.arccos(((self.f.x1-self.f.x3)*(self.f.x2-self.f.x3) +
+                               (self.f.y1-self.f.y3)*(self.f.y2-self.f.y3) +
+                               (self.f.z1-self.f.z3)*(self.f.z2-self.f.z3)) / 
+                              (np.sqrt(((self.f.x1-self.f.x3)**2 + (self.f.y1-self.f.y3)**2
+                                + (self.f.z1-self.f.z3)**2) * 
+                               ((self.f.x2-self.f.x3)**2 + (self.f.y2-self.f.y3)**2
+                                + (self.f.z2-self.f.z3)**2)))
+                             )
+        self._properties["internal angles"] = True
+
+    def _suminternalangles(self, faces, vindex):
+        """
+        Calculate the sum of internal angles for a vertex.
+
+        Parameters
+        ----------
+        faces : LIST
+            List of faces which contain the vertex.
+        vindex : INT
+            Index of the vertex.
+
+        Returns
+        -------
+        FLOAT
+            Sum of internal angles.
+
+        """
+        return sum(self.f.loc[face, 'a1'] if self.f.loc[face,'v1'] == vindex 
+                   else (self.f.loc[face, 'a2'] if self.f.loc[face,'v2'] == vindex 
+                         else self.f.loc[face, 'a3'])
+                   for face in faces)
 
     def getW021(self):
         """
@@ -180,11 +294,68 @@ class MeshCalculator():
         # if/once the areas exist the normals also exist
         if not self._properties.get("areas"):
             self._getareas()
-        self._localW021 = np.array([1/(4*a) * np.tensordot(n, n, axes=0)
-                                    for a, n in zip(self.areas, self.normals)])
-        self.W021 = np.sum(self._localW021, axis=0)/3
+        
+        # We calculate only 6 of the 9 elements due to symmetry
+        self.f['w021_xx'] = 1/(4*self.f.area) * self.f.xn * self.f.xn
+        self.f['w021_xy'] = 1/(4*self.f.area) * self.f.xn * self.f.yn
+        self.f['w021_xz'] = 1/(4*self.f.area) * self.f.xn * self.f.zn
+        self.f['w021_yy'] = 1/(4*self.f.area) * self.f.yn * self.f.yn
+        self.f['w021_yz'] = 1/(4*self.f.area) * self.f.yn * self.f.zn
+        self.f['w021_zz'] = 1/(4*self.f.area) * self.f.zn * self.f.zn
+        # self._localW021 = np.array([1/(4*a) * np.tensordot(n, n, axes=0)
+        #                             for a, n in zip(self.areas, self.normals)])
+        W021_xx = self.f.w021_xx.sum()/3
+        W021_xy = self.f.w021_xy.sum()/3
+        W021_xz = self.f.w021_xz.sum()/3
+        W021_yy = self.f.w021_yy.sum()/3
+        W021_yz = self.f.w021_yz.sum()/3
+        W021_zz = self.f.w021_zz.sum()/3
+        
+        self.W021 = np.array([[W021_xx, W021_xy, W021_xz], 
+                              [W021_xy, W021_yy, W021_yz], 
+                              [W021_xz, W021_yz, W021_zz]])
         self.W021eigenvals, self.W021eigenvecs = np.linalg.eigh(self.W021)
         self._properties["W021"] = True
+
+
+    def getW1(self):
+        """
+        Calculate the Minkowski scalar W_1, which corresponds to the total area
+
+        Returns
+        -------
+        None.
+
+        """
+        if not self._properties.get("areas"):
+            self._getareas()
+        self.W1 = self.f.area.sum()
+        self._properties["W1"] = True
+            
+    
+    def getW3(self):
+        """
+        Calculate the Minkowski scalar W_3, i.e. the total Guassian curvature
+
+        Returns
+        -------
+        None.
+
+        """
+        
+        if not self._properties.get("internal angles"):
+            self._getinternalangles()
+        # for data in self.v.itertuples():
+        #     self.v.loc[data[0], 'w3'] = 2*np.pi - sum(
+        #         self.f.loc[face, 'a1'] if self.f.loc[face,'v1'] == data[0] 
+        #             else (self.f.loc[face, 'a2'] if self.f.loc[face,'v2'] == data[0] 
+        #                   else self.f.loc[face, 'a3'])
+        #         for face in data[4])
+        self.v['w3'] = self.v.apply(lambda x: 2*np.pi - self._suminternalangles(x.faces, x.name), axis=1)
+        self.W3 = self.v.w3.sum()
+        self._properties["W3"] = True
+        
+        
 
     def getbeta021(self):
         """
@@ -237,37 +408,59 @@ class MeshCalculator():
             miny = self.mins[1]
         if not minz:
             minz = self.mins[2]
-
-        minima = (minx, miny, minz)
-        maxima = (maxx, maxy, maxz)
         
-        myf = []
-        subtract = np.zeros(3)
-        remove = [True, True, True]
+        self.v.drop(self.v[(self.v.x<minx) | (self.v.x>maxx) | 
+                           (self.v.y<miny) | (self.v.y>maxy) |
+                           (self.v.z<minz) | (self.v.z>maxz)].index, inplace=True)
         
-        #make a list of all "external" verteces
-        unaccept = np.array([i for i, p in enumerate(self.v) if
-                                         any(p < minima) or any(p > maxima)])
-
-        for face in self.f:
-        #check for each vertex if it is in unaccept and how many lower indices
-        #are in unaccept. If no vertex is in unaccept calculate new triplet.
-            for i, point in enumerate(face):
-                remove[i], subtract[i] = binarySearchCount(unaccept, point)
-            if not any(remove):
-                myf.append(face - subtract)
-        myf = np.array(myf, dtype=int)
+        self.f.drop(self.f[(self.f.x1<minx) | (self.f.x1>maxx) |
+                           (self.f.y1<miny) | (self.f.y1>maxy) |
+                           (self.f.z1<minz) | (self.f.z1>maxz) |
+                           (self.f.x2<minx) | (self.f.x2>maxx) |
+                           (self.f.y2<miny) | (self.f.y2>maxy) |
+                           (self.f.z2<minz) | (self.f.z2>maxz) |
+                           (self.f.x3<minx) | (self.f.x3>maxx) |
+                           (self.f.y3<miny) | (self.f.y3>maxy) |
+                           (self.f.z3<minz) | (self.f.z3>maxz)].index, inplace=True)
         
-        """
-        #old implementation that does not delete verteces
-        newf = np.array([face for face in self.f if not any(np.isin(face, unaccept))])
-        """
-        #delete all "external" verteces
-        self.v = np.delete(self.v, unaccept, axis=0)
-        self.f = myf
+        
+        self.v['newfaces'] = self.v.apply(lambda x: [f for f in x.faces if f in self.f.index])
+        self.v = self.v[self.v['newfaces'].map(lambda d: len(d)) > 0]
+        self.v = self.v.drop('faces', axis=1).rename({'newfaces': 'faces'}, axis=1)
         
         #After changing the mesh one should reset all the performed calculations
         self.resetcalc()
+
+    def savemesh(self, file):
+        """
+        Save the mesh. Supported extensions .obj, .off, .stl, .wrl, .ply .mesh.
+
+        Parameters
+        ----------
+        name : str
+            Path + filename + extension of the file to be saved. Supported extensions
+            .obj, .off, .stl, .wrl, .ply, .mesh.
+
+        Returns
+        -------
+        None.
+
+        """
+        myv = self.v.loc[:,['x', 'y', 'z']]
+        myf = self.f.loc[:,['v1', 'v2', 'v3']]
+        myv['newindex'] = myv.reset_index().index
+        myf['exv1'] = myf.v1.apply(lambda x: myv.loc[x, 'newindex'])
+        myf['exv2'] = myf.v2.apply(lambda x: myv.loc[x, 'newindex'])
+        myf['exv3'] = myf.v3.apply(lambda x: myv.loc[x, 'newindex'])
+        
+        self.exportv = myv[['x','y','z']].to_numpy()
+        self.exportf = myf[['exv1','exv2','exv3']].to_numpy()
+        
+        testsave = igl.write_triangle_mesh(file, self.exportv, self.exportf)
+        if testsave:
+            print("Mesh saved succesfully")
+        else:
+            print("Saving failed")
 
 
 class MeshFromFile(MeshCalculator):
@@ -289,6 +482,7 @@ class MeshFromFile(MeshCalculator):
         None.
 
         """
+        self.filename = filename
         v, f = igl.read_triangle_mesh(filename)
         nv, _, _, nf = igl.remove_duplicate_vertices(v, f, 1e-7)
         MeshCalculator.__init__(self, nv, nf)
