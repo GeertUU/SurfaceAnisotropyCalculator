@@ -20,13 +20,13 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'surfaceanisotropycalculator',
-    version = '0.1.5',
+    version = '0.1.6',
 
     url='https://github.com/GeertUU/SurfaceAnisotropyCalculator',
     author='Geert',
     author_email='g.h.a.schulpen@uu.nl',
 
-    packages=find_packages(include=["surfaceanisotropycalculator", "codefiles.*"]),
+    packages=find_packages(include=["surfaceanisotropycalculator", "surfaceanisotropycalculator.*"]),
     
     install_requires=[
         'numpy',
