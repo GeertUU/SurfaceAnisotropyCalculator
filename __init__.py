@@ -16,9 +16,9 @@
 '''
 
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
-from surfaceanisotropycalculator.anisotropyclass import MeshCalculator, MeshFromFile
+from anisotropyclass import MeshCalculator, MeshFromFile
 
 #make visible for 'from imageAnalysis import *'
 __all__ = [
