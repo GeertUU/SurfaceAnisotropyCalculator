@@ -30,6 +30,6 @@ setup(
     
     install_requires=[
         'numpy',
-        'igl',
+        'libigl',
     ],
 )
