@@ -6,7 +6,7 @@ The project is in a very rudimentary state. The intended scope of the project is
 ## Info
 - Created by: Geert Schulpen
 - Email: g.h.a.schulpen@uu.nl
-- Version: 0.1.12
+- Version: 0.1.13
 
 
 ## Installation
