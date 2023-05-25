@@ -108,54 +108,55 @@ class MeshCalculator():
         # To keep track of what has been calculated we initialize an empty dict
         self.resetcalc()
         
-        edges = []
+        # edges = []
         faces = []
-        lenedges = 0
-        vfaces = [[] for _ in v]
-        vneighbors = [[] for _ in v]
-        vedges = [[] for _ in v]
-        fneighbors = [[] for _ in f]
-        fedges = [[] for _ in f]
+        # lenedges = 0
+        vfaces = [{} for _ in v]
+        vneighbors = [{} for _ in v]
+        # vedges = [[] for _ in v]
+        fneighbors = [{} for _ in f]
+        # fedges = [[] for _ in f]
         for numf, face in enumerate(self.faces):
             thisface = list(face)
             for v1, v2, v3 in ntuples(face, 3):
                 #register the vertexcoordinates with the face
                 thisface += list(self.verteces[v1])
                 #register the face with the vertex
-                vfaces[v1].append(numf)
-                vneighbors[v1].append([v2,v3])
-                #register the edge with both verteces
-                vedges[v1].append(lenedges)
-                vedges[v2].append(lenedges)
-                #register the edge with the face
-                fedges[numf].append(lenedges)
-                #define the edge
-                edges.append((v1, v2, numf, np.array(self.verteces[v1]),
-                               np.array(self.verteces[v2])))
-                lenedges += 1
+                vfaces[v1].add(numf)
+                vneighbors[v1].add(v2)
+                vneighbors[v1].add(v3)
+                # #register the edge with both verteces
+                # vedges[v1].append(lenedges)
+                # vedges[v2].append(lenedges)
+                # #register the edge with the face
+                # fedges[numf].append(lenedges)
+                # #define the edge
+                # edges.append((v1, v2, numf, np.array(self.verteces[v1]),
+                #                np.array(self.verteces[v2])))
+                # lenedges += 1
             faces.append(thisface)
         
         
-        for i, vn in enumerate( vneighbors):
-            #filter all unique values for indices of neighbors
-            vneighbors[i] = np.unique(np.concatenate(vn)) 
+        # for i, vn in enumerate( vneighbors):
+        #     #filter all unique values for indices of neighbors
+        #     vneighbors[i] = np.unique(np.concatenate(vn)) 
 
         self.v = pd.DataFrame(v, columns=["x","y","z"])
         self.v["faces"] = vfaces
         self.v["neighbors"] = vneighbors
-        self.v["edges"] = vedges
+        # self.v["edges"] = vedges
 
         for numf, face in enumerate(self.faces):
             #find neighboring faces
             for v1, v2 in ntuples(face, 2):
                 for neighbor in self.v["faces"][v1]:
                     if numf != neighbor and v2 in self.faces[neighbor]:
-                        fneighbors[numf].append(neighbor)
+                        fneighbors[numf].add(neighbor)
                         
         self.f = pd.DataFrame(faces, columns=["v1","v2","v3", "x1", 'y1', 'z1', "x2", 'y2', 'z2', "x3", 'y3', 'z3'])
         self.f["neighbors"] = fneighbors
-        self.f["edges"] = fedges
-        self.e = pd.DataFrame(edges, columns=['v1', 'v2', 'f', 'loc1', 'loc2'])
+        # self.f["edges"] = fedges
+        # self.e = pd.DataFrame(edges, columns=['v1', 'v2', 'f', 'loc1', 'loc2'])
                 
         
                 
@@ -281,7 +282,15 @@ class MeshCalculator():
                    else (self.f.loc[face, 'a2'] if self.f.loc[face,'v2'] == vindex 
                          else self.f.loc[face, 'a3'])
                    for face in faces)
-
+    
+    def _checkvertexedge(self, faces):
+        for f in faces:
+            
+    
+    def _findedgeverteces(self):
+        self.v['edge'] = self.v.apply(, axis=1)
+        
+    
     def getW021(self):
         """
         Calculate the Minkowski tensor W^{0,2}_1
@@ -427,6 +436,9 @@ class MeshCalculator():
         self.v['newfaces'] = self.v.apply(lambda x: [f for f in x.faces if f in self.f.index], axis=1)
         self.v = self.v[self.v['newfaces'].map(lambda d: len(d)) > 0]
         self.v = self.v.drop('faces', axis=1).rename({'newfaces': 'faces'}, axis=1)
+        self.f['newfaces'] = self.f.apply(lambda x: [f for f in x.neighbors if f in self.f.index], axis=1)
+        self.f = self.f[self.f['newfaces'].map(lambda d: len(d)) > 0]
+        self.f = self.f.drop('neighbors', axis=1).rename({'newfaces': 'neighbors'}, axis=1)
         
         #After changing the mesh one should reset all the performed calculations
         self.resetcalc()
