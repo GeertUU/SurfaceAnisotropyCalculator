@@ -261,9 +261,9 @@ class MeshCalculator():
                              )
         self._properties["internal angles"] = True
 
-    def _suminternalangles(self, faces, vindex):
+    def _suminternalangles(self, faces, vindex, edge):
         """
-        Calculate the sum of internal angles for a vertex.
+        Calculate the sum of internal angles for verteces.
 
         Parameters
         ----------
@@ -275,7 +275,7 @@ class MeshCalculator():
         Returns
         -------
         FLOAT
-            Sum of internal angles.
+            If vertex is internal: sum of internal angles
 
         """
         return sum(self.f.loc[face, 'a1'] if self.f.loc[face,'v1'] == vindex 
@@ -284,11 +284,42 @@ class MeshCalculator():
                    for face in faces)
     
     def _checkvertexedge(self, faces):
+        """
+        Check if the vertex is on the edge of the surface
+
+        Parameters
+        ----------
+        faces : SET or LIST
+            SET of faces that contain the vertex.
+
+        Returns
+        -------
+        bool
+            Wether the vertex is on the edge.
+
+        """
         for f in faces:
-            
+            found = 0
+            for n in self.f.loc[f, 'neighbors']:
+                if n in faces:
+                    if found == 2:
+                        break
+                    else:
+                        found += 1
+            if found != 2:
+                return True
+        return False
     
     def _findedgeverteces(self):
-        self.v['edge'] = self.v.apply(, axis=1)
+        """
+        Fills self.v.edge with bools depending on if the vertex is on the edge
+
+        Returns
+        -------
+        None.
+
+        """
+        self.v['edge'] = self.v.apply(lambda x: self._checkvertexedge(x.faces), axis=1)
         
     
     def getW021(self):
@@ -360,7 +391,7 @@ class MeshCalculator():
         #             else (self.f.loc[face, 'a2'] if self.f.loc[face,'v2'] == data[0] 
         #                   else self.f.loc[face, 'a3'])
         #         for face in data[4])
-        self.v['w3'] = self.v.apply(lambda x: 2*np.pi - self._suminternalangles(x.faces, x.name), axis=1)
+        self.v['w3'] = self.v.apply(lambda x: 0 if x.edge else (2*np.pi - self._suminternalangles(x.faces, x.name)), axis=1)
         self.W3 = self.v.w3.sum()
         self._properties["W3"] = True
         
