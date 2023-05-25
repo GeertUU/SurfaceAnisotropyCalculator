@@ -261,7 +261,7 @@ class MeshCalculator():
                              )
         self._properties["internal angles"] = True
 
-    def _suminternalangles(self, faces, vindex, edge):
+    def _suminternalangles(self, faces, vindex):
         """
         Calculate the sum of internal angles for verteces.
 
