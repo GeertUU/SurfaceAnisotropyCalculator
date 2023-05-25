@@ -320,6 +320,7 @@ class MeshCalculator():
 
         """
         self.v['edge'] = self.v.apply(lambda x: self._checkvertexedge(x.faces), axis=1)
+        self._properties["edge verteces"] = True
         
     
     def getW021(self):
@@ -385,6 +386,9 @@ class MeshCalculator():
         
         if not self._properties.get("internal angles"):
             self._getinternalangles()
+        
+        if not self._properties.get("edge verteces"):
+            self._findedgeverteces()
         # for data in self.v.itertuples():
         #     self.v.loc[data[0], 'w3'] = 2*np.pi - sum(
         #         self.f.loc[face, 'a1'] if self.f.loc[face,'v1'] == data[0] 
