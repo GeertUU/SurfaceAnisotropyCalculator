@@ -111,10 +111,10 @@ class MeshCalculator():
         # edges = []
         faces = []
         # lenedges = 0
-        vfaces = [{} for _ in v]
-        vneighbors = [{} for _ in v]
+        vfaces = [set() for _ in v]
+        vneighbors = [set() for _ in v]
         # vedges = [[] for _ in v]
-        fneighbors = [{} for _ in f]
+        fneighbors = [set() for _ in f]
         # fedges = [[] for _ in f]
         for numf, face in enumerate(self.faces):
             thisface = list(face)
