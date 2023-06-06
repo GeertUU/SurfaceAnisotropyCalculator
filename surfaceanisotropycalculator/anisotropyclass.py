@@ -372,6 +372,47 @@ class MeshCalculator():
         self.W1 = self.f.area.sum()
         self._properties["W1"] = True
             
+        
+    def getW2(self):
+        """
+        Calculate the Minkowski scalar W_2, i.e. the mean curvature
+
+        Returns
+        -------
+        float
+            Minkowski scalar W_2 of the current surface.
+
+        """
+        if not self._properties.get("normals"):
+            self._getnormals()
+        if not self._properties.get("edges"):
+            self._getedgevector()
+        
+        for face in self.f.itertuples():
+                edgesface = set(a for a in ntuples([face.v1,face.v2,face.v3],2))
+                facenormal = [face.xn, face.yn, face.zn]
+                for neighbor in face.neighbors:
+                    edgesneighbor = set(a[::-1] for a in ntuples(self.f.loc[neighbor,['v1','v2','v3']],2))
+                    verteces = next(iter(edgesface & edgesneighbor))
+                    myindex = self.e[(self.e['v1'] == verteces[0]) & (self.e['v2'] == verteces[1])].index
+                    self.e.loc[myindex, ['fnx','fny','fnz']] = facenormal
+                    self.e.loc[myindex, 'antiface'] = neighbor
+                    
+                    neighbornormal = self.f.loc[neighbor,['xn','yn','zn']].to_numpy()
+                    dfedge = self.e.loc[myindex,['edge', 'norm']]
+                    edge = dfedge.iloc[0,0]
+                    norm = dfedge.iloc[0,1]
+                    normedge = edge/norm
+                    
+                    m = np.cross(facenormal, normedge)
+                    alphae = np.arctan2(np.dot(neighbornormal, m), np.dot(neighbornormal, facenormal))
+                    
+                    self.e.loc[myindex, 'alphae'] = alphae*0.5
+                    self.e.loc[myindex, 'w2'] = norm*alphae*0.25
+                    
+        self.W2 = 1/3*self.e.w2.sum()
+        self._properties["w2"] = True
+        return self.W2
     
     def getW3(self):
         """
@@ -388,12 +429,7 @@ class MeshCalculator():
         
         if not self._properties.get("edge verteces"):
             self._findedgeverteces()
-        # for data in self.v.itertuples():
-        #     self.v.loc[data[0], 'w3'] = 2*np.pi - sum(
-        #         self.f.loc[face, 'a1'] if self.f.loc[face,'v1'] == data[0] 
-        #             else (self.f.loc[face, 'a2'] if self.f.loc[face,'v2'] == data[0] 
-        #                   else self.f.loc[face, 'a3'])
-        #         for face in data[4])
+
         self.v['w3'] = self.v.apply(lambda x: 0 if x.edge else (2*np.pi - self._suminternalangles(x.faces, x.name)), axis=1)
         self.W3 = self.v.w3.sum()
         self._properties["W3"] = True
