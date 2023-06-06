@@ -108,14 +108,14 @@ class MeshCalculator():
         # To keep track of what has been calculated we initialize an empty dict
         self.resetcalc()
         
-        # edges = []
+        edges = []
         faces = []
-        # lenedges = 0
+        lenedges = 0
         vfaces = [set() for _ in v]
         vneighbors = [set() for _ in v]
-        # vedges = [[] for _ in v]
+        vedges = [[] for _ in v]
         fneighbors = [set() for _ in f]
-        # fedges = [[] for _ in f]
+        fedges = [[] for _ in f]
         for numf, face in enumerate(self.faces):
             thisface = list(face)
             for v1, v2, v3 in ntuples(face, 3):
@@ -124,26 +124,21 @@ class MeshCalculator():
                 #register the face with the vertex
                 vfaces[v1].add(numf)
                 vneighbors[v1].update([v2,v3])
-                # #register the edge with both verteces
-                # vedges[v1].append(lenedges)
-                # vedges[v2].append(lenedges)
-                # #register the edge with the face
-                # fedges[numf].append(lenedges)
-                # #define the edge
-                # edges.append((v1, v2, numf, np.array(self.verteces[v1]),
-                #                np.array(self.verteces[v2])))
-                # lenedges += 1
+                #register the edge with both verteces
+                vedges[v1].append(lenedges)
+                vedges[v2].append(lenedges)
+                #register the edge with the face
+                fedges[numf].append(lenedges)
+                #define the edge
+                edges.append((v1, v2, numf, np.array(self.verteces[v1]),
+                                np.array(self.verteces[v2])))
+                lenedges += 1
             faces.append(thisface)
-        
-        
-        # for i, vn in enumerate( vneighbors):
-        #     #filter all unique values for indices of neighbors
-        #     vneighbors[i] = np.unique(np.concatenate(vn)) 
 
         self.v = pd.DataFrame(v, columns=["x","y","z"])
         self.v["faces"] = vfaces
         self.v["neighbors"] = vneighbors
-        # self.v["edges"] = vedges
+        self.v["edges"] = vedges
 
         for numf, face in enumerate(self.faces):
             #find neighboring faces
@@ -154,13 +149,9 @@ class MeshCalculator():
                         
         self.f = pd.DataFrame(faces, columns=["v1","v2","v3", "x1", 'y1', 'z1', "x2", 'y2', 'z2', "x3", 'y3', 'z3'])
         self.f["neighbors"] = fneighbors
-        # self.f["edges"] = fedges
-        # self.e = pd.DataFrame(edges, columns=['v1', 'v2', 'f', 'loc1', 'loc2'])
-                
-        
-                
-                
-                
+        self.f["edges"] = fedges
+        self.e = pd.DataFrame(edges, columns=['v1', 'v2', 'f', 'loc1', 'loc2'])
+         
 
     def resetcalc(self):
         """
@@ -260,6 +251,45 @@ class MeshCalculator():
                              )
         self._properties["internal angles"] = True
 
+    def _getedgevector(self):
+        """
+        Calculate the edge vectors and edge lengths
+
+        Returns
+        -------
+        None.
+
+        """
+        self.e['edge'] = self.e.loc2 - self.e.loc1
+        self.e['norm'] = self.e.apply(lambda x: np.sqrt(np.dot(x.edge,x.edge)), axis=1)
+        self._properties["edges"] = True
+        
+    def _getantifaces(self):
+        """
+        Find for each edge find the other face that borders that edge
+
+        Returns
+        -------
+        None.
+
+        """
+        self.e['antiface'] = self.e.apply(lambda x: 
+            self.e[(self.e['v2'] == x.v1) & (self.e['v1'] == x.v2)].f.iloc[0], axis=1)
+        self._properties['antifaces'] = True
+    
+    def _findedgeverteces(self):
+        """
+        Fills self.v.edge with bools depending on if the vertex is on the edge
+
+        Returns
+        -------
+        None.
+
+        """
+        self.v['edge'] = self.v.apply(lambda x: self._checkvertexedge(x.faces), axis=1)
+        self._properties["edge verteces"] = True
+
+
     def _suminternalangles(self, faces, vindex):
         """
         Calculate the sum of internal angles for verteces.
@@ -308,20 +338,105 @@ class MeshCalculator():
             if found != 2:
                 return True
         return False
-    
-    def _findedgeverteces(self):
+
+    def _getalphae(self, edge):
         """
-        Fills self.v.edge with bools depending on if the vertex is on the edge
+        Calculate the dihedral angle for an edge
+
+        The dihedral angle is calculated using the method suggested here:
+        https://math.stackexchange.com/questions/47059/how-do-i-calculate-a-dihedral-angle-given-cartesian-coordinates
+        In short: we find the normal of one face in the coordinate system 
+        composed of the other normal, the edge and the crossproduct of these.
+        Then the arctan2 function allows for determination of correct angle.
+        
+        Parameters
+        ----------
+        edge : Series
+            Pandas series with at least the values: 
+                edge:
+                    an numpy array of the vector pointing along the edge
+                norm:
+                    the length of the edge
+                f:
+                    the index of the face of which this is an edge
+                antiface:
+                    the index of the face which borders this edge.
+
+        Returns
+        -------
+        alphae : float
+            The dihedral angle.
+
+        """
+        normedge = edge.edge/edge.norm
+        myface = self.f.loc[edge.f]
+        facenormal = [myface.xn, myface.yn, myface.zn]
+        antiface = self.f.loc[edge.antiface]
+        neighbornormal = [antiface.xn, antiface.yn, antiface.zn]
+        #finding the last coordinate direction
+        m = np.cross(facenormal, normedge)
+        #tan(alphae) = y/x, where x is parallel part of the 2 normals, y normal part
+        alphae = np.arctan2(np.dot(neighbornormal, m), np.dot(neighbornormal, facenormal))
+        return alphae
+        
+    
+    def getW1(self):
+        """
+        Calculate the Minkowski scalar W_1, which corresponds to the total area
 
         Returns
         -------
         None.
 
         """
-        self.v['edge'] = self.v.apply(lambda x: self._checkvertexedge(x.faces), axis=1)
-        self._properties["edge verteces"] = True
+        if not self._properties.get("areas"):
+            self._getareas()
+        self.W1 = self.f.area.sum()
+        self._properties["W1"] = True
         
-    
+    def getW2(self):
+        """
+        Calculate the Minkowski scalar W_2, i.e. the mean curvature
+
+        Returns
+        -------
+        float
+            Minkowski scalar W_2 of the current surface.
+
+        """
+        if not self._properties.get("normals"):
+            self._getnormals()
+        if not self._properties.get("edges"):
+            self._getedgevector()
+        if not self._properties.get("antiface"):
+            self._getantifaces()
+
+        self.e['alphae'] = self.e.apply(lambda x: self._getalphae(x), axis=1)
+        self.e['w2'] = self.e.norm * self.e.alphae * 0.25
+        self.W2 = 1/3*self.e.w2.sum()
+        self._properties["w2"] = True
+        return self.W2
+      
+    def getW3(self):
+        """
+        Calculate the Minkowski scalar W_3, i.e. the total Guassian curvature
+
+        Returns
+        -------
+        None.
+
+        """
+        
+        if not self._properties.get("internal angles"):
+            self._getinternalangles()
+        
+        if not self._properties.get("edge verteces"):
+            self._findedgeverteces()
+
+        self.v['w3'] = self.v.apply(lambda x: 0 if x.edge else (2*np.pi - self._suminternalangles(x.faces, x.name)), axis=1)
+        self.W3 = self.v.w3.sum()
+        self._properties["W3"] = True
+
     def getW021(self):
         """
         Calculate the Minkowski tensor W^{0,2}_1
@@ -356,84 +471,6 @@ class MeshCalculator():
                               [W021_xz, W021_yz, W021_zz]])
         self.W021eigenvals, self.W021eigenvecs = np.linalg.eigh(self.W021)
         self._properties["W021"] = True
-
-
-    def getW1(self):
-        """
-        Calculate the Minkowski scalar W_1, which corresponds to the total area
-
-        Returns
-        -------
-        None.
-
-        """
-        if not self._properties.get("areas"):
-            self._getareas()
-        self.W1 = self.f.area.sum()
-        self._properties["W1"] = True
-            
-        
-    def getW2(self):
-        """
-        Calculate the Minkowski scalar W_2, i.e. the mean curvature
-
-        Returns
-        -------
-        float
-            Minkowski scalar W_2 of the current surface.
-
-        """
-        if not self._properties.get("normals"):
-            self._getnormals()
-        if not self._properties.get("edges"):
-            self._getedgevector()
-        
-        for face in self.f.itertuples():
-                edgesface = set(a for a in ntuples([face.v1,face.v2,face.v3],2))
-                facenormal = [face.xn, face.yn, face.zn]
-                for neighbor in face.neighbors:
-                    edgesneighbor = set(a[::-1] for a in ntuples(self.f.loc[neighbor,['v1','v2','v3']],2))
-                    verteces = next(iter(edgesface & edgesneighbor))
-                    myindex = self.e[(self.e['v1'] == verteces[0]) & (self.e['v2'] == verteces[1])].index
-                    self.e.loc[myindex, ['fnx','fny','fnz']] = facenormal
-                    self.e.loc[myindex, 'antiface'] = neighbor
-                    
-                    neighbornormal = self.f.loc[neighbor,['xn','yn','zn']].to_numpy()
-                    dfedge = self.e.loc[myindex,['edge', 'norm']]
-                    edge = dfedge.iloc[0,0]
-                    norm = dfedge.iloc[0,1]
-                    normedge = edge/norm
-                    
-                    m = np.cross(facenormal, normedge)
-                    alphae = np.arctan2(np.dot(neighbornormal, m), np.dot(neighbornormal, facenormal))
-                    
-                    self.e.loc[myindex, 'alphae'] = alphae*0.5
-                    self.e.loc[myindex, 'w2'] = norm*alphae*0.25
-                    
-        self.W2 = 1/3*self.e.w2.sum()
-        self._properties["w2"] = True
-        return self.W2
-    
-    def getW3(self):
-        """
-        Calculate the Minkowski scalar W_3, i.e. the total Guassian curvature
-
-        Returns
-        -------
-        None.
-
-        """
-        
-        if not self._properties.get("internal angles"):
-            self._getinternalangles()
-        
-        if not self._properties.get("edge verteces"):
-            self._findedgeverteces()
-
-        self.v['w3'] = self.v.apply(lambda x: 0 if x.edge else (2*np.pi - self._suminternalangles(x.faces, x.name)), axis=1)
-        self.W3 = self.v.w3.sum()
-        self._properties["W3"] = True
-        
         
 
     def getbeta021(self):
@@ -450,6 +487,7 @@ class MeshCalculator():
             self.getW021()
         self.beta021 = self.W021eigenvals[0] / self.W021eigenvals[-1]
         self._properties["beta021"] = True
+
 
     def cropmesh(self, maxx=None, minx=None, maxy=None, miny=None, maxz=None, minz=None):
         """
