@@ -35,6 +35,7 @@ pip install --upgrade git+https://github.com/GeertUU/SurfaceAnisotropyCalculator
 
 0.2.0
 Minkowski scalar W2 can now be calculated
+The pandas package is actually listed as an install requirement now
 
 0.1.10
 Removed external verteces from W3 calculations
