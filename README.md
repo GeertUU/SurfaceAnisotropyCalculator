@@ -6,7 +6,7 @@ The project is in a very rudimentary state. The intended scope of the project is
 ## Info
 - Created by: Geert Schulpen
 - Email: g.h.a.schulpen@uu.nl
-- Version: 0.2.0
+- Version: 0.3.0
 
 
 ## Installation
@@ -32,6 +32,8 @@ pip install --upgrade git+https://github.com/GeertUU/SurfaceAnisotropyCalculator
 
 
 ## Changelog
+0.3.0
+Added functionality to read in data from confocal stacks and find the correct mesh
 
 0.2.0
 Minkowski scalar W2 can now be calculated

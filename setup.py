@@ -20,7 +20,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'surfaceanisotropycalculator',
-    version = '0.2.0',
+    version = '0.3.0',
 
     url='https://github.com/GeertUU/SurfaceAnisotropyCalculator',
     author='Geert',
@@ -32,5 +32,6 @@ setup(
         'numpy',
         'libigl',
         'pandas',
+        'scikit-image',
     ],
 )
