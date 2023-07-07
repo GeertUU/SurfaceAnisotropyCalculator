@@ -18,7 +18,7 @@ import numpy as np
 import igl
 import skimage
 
-import anisotropyclass
+from surfaceanisotropycalculator.anisotropyclass import MeshCalculator
 
 def createMesh(image, channel, threshold, **kwargs):
     '''
@@ -105,7 +105,7 @@ def createoptimalMesh(image, channel=0, test='auto', **kwargs):
     return bestmesh, maxarea, correcttreshold
 
 
-class MeshFromStack(anisotropyclass.MeshCalculator):
+class MeshFromStack(MeshCalculator):
     """
     Simple wrapper class to import mesh from an image stack
     
