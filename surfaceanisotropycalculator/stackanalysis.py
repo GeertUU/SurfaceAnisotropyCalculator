@@ -136,5 +136,5 @@ class MeshFromStack(MeshCalculator):
         print(f'Best mesh at threshold {threshold}')
         v, f, normals, values = mesh
         nv, _, _, nf = igl.remove_duplicate_vertices(v, f, 1e-7)
-        anisotropyclass.MeshCalculator.__init__(self, nv, nf)
+        MeshCalculator.__init__(self, nv, nf)
         
