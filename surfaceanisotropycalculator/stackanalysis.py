@@ -18,34 +18,10 @@ import numpy as np
 import igl
 import skimage
 
+from readlif.reader import LifFile
 from surfaceanisotropycalculator.anisotropyclass import MeshCalculator
 
-def createMesh(image, channel, threshold, **kwargs):
-    '''
-    Wrapper function for skimage.measure.marching_cubes
 
-    Parameters
-    ----------
-    image : STR
-        Imagefile (including path).
-    channel : INT
-        Which channel to use of the image.
-    threshold : float
-        intensitylevel used as separation value.
-    **kwargs : dict
-        Any optional/keyword arguments that should be passed to
-        skimage.measure.marching_cubes.
-
-    Returns
-    -------
-    mymesh : TYPE
-        DESCRIPTION.
-
-    '''
-    myimg = skimage.io.imread(image)
-    grayimg = myimg[:,:,:, channel]
-    mymesh = skimage.measure.marching_cubes(grayimg, threshold, **kwargs)
-    return mymesh
 
 def createoptimalMesh(image, channel=0, test='auto', **kwargs):
     """
@@ -78,36 +54,74 @@ def createoptimalMesh(image, channel=0, test='auto', **kwargs):
         Threshold value at which bestmesh is found.
 
     """
-    myimg = skimage.io.imread(image)
-    try:
-        grayimg = myimg[:,:,:, channel]
-    except IndexError:
-        grayimg = myimg[:,:,:]
+
     if test == 'auto':
-        info = np.iinfo(myimg.dtype)
-        test = range(info.min, info.max)
+        info = [int(np.max(image)), int(np.min(image))]
+        test = range(info[1], info[0])
     
     maxarea = 0
     bestmesh = ()
     try:
         for level in test:
-            mymesh = skimage.measure.marching_cubes(grayimg, level, **kwargs)
+            mymesh = skimage.measure.marching_cubes(image, level, **kwargs)
             myarea = skimage.measure.mesh_surface_area(mymesh[0], mymesh[1])
             if myarea > maxarea:
                 maxarea = myarea
                 bestmesh = mymesh
                 correcttreshold = level
     except TypeError:
-        bestmesh = createMesh(image, channel, test, **kwargs)
+        bestmesh = skimage.measure.marching_cubes(image, test, **kwargs)
         maxarea = skimage.measure.mesh_surface_area(bestmesh[0], bestmesh[1])
         correcttreshold = test
 
     return bestmesh, maxarea, correcttreshold
 
 
+class MeshFromLif(MeshCalculator):
+    """
+    Simple wrapper class to import mesh from an image stack in .lif format.
+    
+    Parameters
+    ----------
+        filename : str
+            Path + filename + extension of the image stack file. 
+        channel : INT
+            Which channel to use of the image stack.
+        test : iterable, optional
+            An iterable containing all threshold values that should be tested. The
+            default is 'auto', for which the function automatically generates an
+            iterator containing all the integers between the smallest and biggest 
+            intensity values in the image.
+        **kwargs : dict
+            Any optional/keyword arguments that should be passed to
+            skimage.measure.marching_cubes. 
+
+    Returns
+    -------
+        None.
+    """
+    def __init__(self, image, channel, test='auto', **kwargs):
+        """
+        Initialize class instance
+        """    
+        myimg = LifFile(image).get_image()
+        img = np.fromiter(myimg.get_iter_z(c=channel), np.dtype((int, (1024,1024))))
+        scales = myimg.scale
+        spacing = [np.abs(x) for x in scales[2::-1]]
+        
+        mesh, area, threshold = createoptimalMesh(img, test, spacing = spacing, **kwargs)
+        print(f'Best mesh at threshold {threshold}')
+        v, f, normals, values = mesh
+        nv, _, _, nf = igl.remove_duplicate_vertices(v, f, 1e-7)
+        MeshCalculator.__init__(self, nv, nf)
+        
+
+
+
+
 class MeshFromStack(MeshCalculator):
     """
-    Simple wrapper class to import mesh from an image stack
+    Simple wrapper class to import mesh from an image stack with manual spacings
     
     Parameters
     ----------
@@ -132,7 +146,12 @@ class MeshFromStack(MeshCalculator):
         """
         Initialize class instance
         """
-        mesh, area, threshold = createoptimalMesh(image, channel, test, **kwargs)
+        myimg = skimage.io.imread(image)
+        try:
+            grayimg = myimg[:,:,:, channel]
+        except IndexError:
+            grayimg = myimg[:,:,:]
+        mesh, area, threshold = createoptimalMesh(grayimg, test, **kwargs)
         print(f'Best mesh at threshold {threshold}')
         v, f, normals, values = mesh
         nv, _, _, nf = igl.remove_duplicate_vertices(v, f, 1e-7)

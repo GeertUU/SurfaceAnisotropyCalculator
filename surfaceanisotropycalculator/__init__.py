@@ -16,14 +16,15 @@
 '''
 
 
-__version__ = '0.3.1'
+__version__ = '0.3.2'
 
 from surfaceanisotropycalculator.anisotropyclass import MeshCalculator, MeshFromFile
-from surfaceanisotropycalculator.stackanalysis import MeshFromStack
+from surfaceanisotropycalculator.stackanalysis import MeshFromStack, MeshFromLif
 
 #make visible for 'from imageAnalysis import *'
 __all__ = [
     'MeshCalculator',
     'MeshFromFile',
     'MeshFromStack',
+    'MeshFromLif',
 ]
