@@ -33,5 +33,6 @@ setup(
         'libigl',
         'pandas',
         'scikit-image',
+        'readlif',
     ],
 )
