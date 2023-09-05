@@ -23,7 +23,7 @@ from surfaceanisotropycalculator.anisotropyclass import MeshCalculator
 
 
 
-def createoptimalMesh(image, channel=0, test='auto', **kwargs):
+def createoptimalMesh(image, test='auto', **kwargs):
     """
     Find the threshold at which the mesh area is maximized
 
@@ -107,7 +107,7 @@ class MeshFromLif(MeshCalculator):
         myimg = LifFile(image).get_image()
         img = np.fromiter(myimg.get_iter_z(c=channel), np.dtype((int, (1024,1024))))
         scales = myimg.scale
-        spacing = [np.abs(x) for x in scales[2::-1]]
+        spacing = [1/np.abs(x) for x in scales[2::-1]]
         
         mesh, area, threshold = createoptimalMesh(img, test, spacing = spacing, **kwargs)
         print(f'Best mesh at threshold {threshold}')
