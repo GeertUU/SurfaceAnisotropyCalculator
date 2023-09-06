@@ -1,12 +1,12 @@
 # SurfaceAnisotropyCalculator
 Class to deal with a mesh and calculations on it.
 The project is in a very rudimentary state. The intended scope of the project is to allow for easy calculations of (relevant) Minkowski tensors, as described in Schröder-Turk _et al_. "Tensors of Anisotropic Spatial Structure" New J. Phys. 2013, https://doi.org/10.1088/1367-2630/15/8/083028. 
-. 
+
 
 ## Info
 - Created by: Geert Schulpen
 - Email: g.h.a.schulpen@uu.nl
-- Version: 0.2.0
+- Version: 0.3.3
 
 
 ## Installation
@@ -32,6 +32,8 @@ pip install --upgrade git+https://github.com/GeertUU/SurfaceAnisotropyCalculator
 
 
 ## Changelog
+0.3.0
+Added functionality to read in data from confocal stacks and find the correct mesh
 
 0.2.0
 Minkowski scalar W2 can now be calculated
