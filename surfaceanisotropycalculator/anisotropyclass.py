@@ -472,6 +472,20 @@ class MeshCalculator():
         self.W021eigenvals, self.W021eigenvecs = np.linalg.eigh(self.W021)
         self._properties["W021"] = True
         
+    def getaalpha021(self):
+        """
+        Calculate one minus the ratio between the highest and lowest eigenvalue
+        of the Minkowski tensor W^{0,2}_1
+        
+        Returns
+        -------
+        None.
+        
+        """
+        if not self._properties.get("W021"):
+            self.getW021()
+        self.alpha021 = 1 - self.W021eigenvals[0] / self.W021eigenvals[-1]
+        self._properties["alpha021"] = True
 
     def getbeta021(self):
         """
