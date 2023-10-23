@@ -84,9 +84,12 @@ class MeshFromLif(MeshCalculator):
     Parameters
     ----------
         filename : str
-            Path + filename + extension of the image stack file. 
+            Path + filename + extension (.lif) of the file. 
         channel : INT
             Which channel to use of the image stack.
+        n : INT, optional
+            What image in the lif file is to be used? The default is 0, the
+            first image
         test : iterable, optional
             An iterable containing all threshold values that should be tested. The
             default is 'auto', for which the function automatically generates an
@@ -100,11 +103,11 @@ class MeshFromLif(MeshCalculator):
     -------
         None.
     """
-    def __init__(self, image, channel, test='auto', **kwargs):
+    def __init__(self, filename, channel, n=0, test='auto', **kwargs):
         """
         Initialize class instance
         """    
-        myimg = LifFile(image).get_image()
+        myimg = LifFile(filename).get_image(n)
         img = np.fromiter(myimg.get_iter_z(c=channel), np.dtype((int, (1024,1024))))
         scales = myimg.scale
         spacing = [1/np.abs(x) for x in scales[2::-1]]

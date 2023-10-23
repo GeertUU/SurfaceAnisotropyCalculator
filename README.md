@@ -6,7 +6,7 @@ The project is in a very rudimentary state. The intended scope of the project is
 ## Info
 - Created by: Geert Schulpen
 - Email: g.h.a.schulpen@uu.nl
-- Version: 0.3.4
+- Version: 0.3.5
 
 
 ## Installation
@@ -32,6 +32,9 @@ pip install --upgrade git+https://github.com/GeertUU/SurfaceAnisotropyCalculator
 
 
 ## Changelog
+0.3.5
+Added image selection for .lif files that have multiple images
+
 0.3.4
 Added functionality to calculate anisotropy paramater alpha (1-beta)
 
