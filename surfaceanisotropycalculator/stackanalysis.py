@@ -108,7 +108,8 @@ class MeshFromLif(MeshCalculator):
         Initialize class instance
         """    
         myimg = LifFile(filename).get_image(n)
-        img = np.fromiter(myimg.get_iter_z(c=channel), np.dtype((int, (1024,1024))))
+        imgsize = (myimg.dims_n[1], myimg.dims_n[2])
+        img = np.fromiter(myimg.get_iter_z(c=channel), np.dtype((int, imgsize)))
         scales = myimg.scale
         spacing = [1/np.abs(x) for x in scales[2::-1]]
         
