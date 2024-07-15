@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    Copyright (C) 2023  Geert Schulpen
+    Copyright (C) 2024  Geert Schulpen
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -29,8 +29,8 @@ def createoptimalMesh(image, test='auto', **kwargs):
 
     Parameters
     ----------
-    image : STR
-        Imagefile (including path).
+    image : 3D or 4D array
+        Image stack.
     channel : INT, optiional
         Which channel to use of the image. If the image has just one channel 
         this parmeter has no effect. The default is 0.
@@ -146,11 +146,11 @@ class MeshFromStack(MeshCalculator):
     -------
         None.
     """
-    def __init__(self, image, channel, test='auto', **kwargs):
+    def __init__(self, filename, channel, test='auto', **kwargs):
         """
         Initialize class instance
         """
-        myimg = skimage.io.imread(image)
+        myimg = skimage.io.imread(filename)
         try:
             grayimg = myimg[:,:,:, channel]
         except IndexError:
@@ -161,3 +161,41 @@ class MeshFromStack(MeshCalculator):
         nv, _, _, nf = igl.remove_duplicate_vertices(v, f, 1e-7)
         MeshCalculator.__init__(self, nv, nf)
         
+        
+        
+class MeshFromImageStack(MeshCalculator):
+    """
+    Simple wrapper class to import mesh from an image stack with manual spacings
+    
+    Parameters
+    ----------
+        image : 3D or 4D array
+            Image stack. 
+        channel : INT
+            Which channel to use of the image stack.
+        test : iterable, optional
+            An iterable containing all threshold values that should be tested. The
+            default is 'auto', for which the function automatically generates an
+            iterator containing all the integers between the smallest and biggest 
+            intensity values in the image.
+        **kwargs : dict
+            Any optional/keyword arguments that should be passed to
+            skimage.measure.marching_cubes.
+
+    Returns
+    -------
+        None.
+    """
+    def __init__(self, image, channel, test='auto', **kwargs):
+        """
+        Initialize class instance
+        """
+        try:
+            grayimg = image[:,:,:, channel]
+        except IndexError:
+            grayimg = image[:,:,:]
+        mesh, area, threshold = createoptimalMesh(grayimg, test, **kwargs)
+        print(f'Best mesh at threshold {threshold}')
+        v, f, normals, values = mesh
+        nv, _, _, nf = igl.remove_duplicate_vertices(v, f, 1e-7)
+        MeshCalculator.__init__(self, nv, nf)
