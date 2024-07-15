@@ -1,5 +1,5 @@
 '''
-    Copyright (C) 2023  Geert Schulpen
+    Copyright (C) 2023-2024  Geert Schulpen
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -20,7 +20,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'surfaceanisotropycalculator',
-    version = '0.3.5',
+    version = '0.3.6',
 
     url='https://github.com/GeertUU/SurfaceAnisotropyCalculator',
     author='Geert',
