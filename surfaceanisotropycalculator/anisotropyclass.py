@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    Copyright (C) 2023  Geert Schulpen
+    Copyright (C) 2023-2024  Geert Schulpen
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,7 @@ import pandas as pd
 
 import igl
 
-#v, f = igl.read_triangle_mesh('C:/Users/5887992/Documents/1_Anisotropy/testingAnisotropy/test.ply')
+
 """
 Helper function to iterate over ntuples in an array (wrapping)
 """
@@ -434,7 +434,7 @@ class MeshCalculator():
             self._findedgeverteces()
 
         self.v['w3'] = self.v.apply(lambda x: 0 if x.edge else (2*np.pi - self._suminternalangles(x.faces, x.name)), axis=1)
-        self.W3 = self.v.w3.sum()
+        self.W3 = 1/3*self.v.w3.sum()
         self._properties["W3"] = True
 
     def getW021(self):
