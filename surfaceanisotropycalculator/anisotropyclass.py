@@ -436,7 +436,36 @@ class MeshCalculator():
         self.v['w3'] = self.v.apply(lambda x: 0 if x.edge else (2*np.pi - self._suminternalangles(x.faces, x.name)), axis=1)
         self.W3 = 1/3*self.v.w3.sum()
         self._properties["W3"] = True
+        
+    def scaledGenus(self, volume = None):
+        """
+        Calculates the scaled genus.
+        
+        Parameters
+        ----------
+        volume : float, optional
+            The volume to be used in the calculation.
+            The default value is equal to the box size
 
+        Returns
+        -------
+        scaledgenus : TYPE
+            DESCRIPTION.
+
+        """
+        
+        if not self._properties.get("W1"):
+            self.getW1()
+        if not self._properties.get("W3"):
+            self.getW3()
+        if volume == None:
+            volume = np.prod(self.maxs - self.mins)
+        
+        genus = 1 - (3*self.W3)/(4*np.pi)
+        scaledgenus = genus * volume**2/(self.W1**3)
+        
+        return scaledgenus
+        
     def getW021(self):
         """
         Calculate the Minkowski tensor W^{0,2}_1
@@ -501,7 +530,6 @@ class MeshCalculator():
             self.getW021()
         self.beta021 = self.W021eigenvals[0] / self.W021eigenvals[-1]
         self._properties["beta021"] = True
-
 
     def cropmesh(self, maxx=None, minx=None, maxy=None, miny=None, maxz=None, minz=None):
         """
@@ -595,6 +623,8 @@ class MeshCalculator():
             print("Mesh saved succesfully")
         else:
             print("Saving failed")
+            
+            
 
 
 class MeshFromFile(MeshCalculator):

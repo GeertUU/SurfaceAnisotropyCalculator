@@ -6,7 +6,7 @@ The project is in a very rudimentary state. The intended scope of the project is
 ## Info
 - Created by: Geert Schulpen
 - Email: g.h.a.schulpen@uu.nl
-- Version: 0.3.7
+- Version: 0.3.8
 
 
 ## Installation
@@ -32,6 +32,9 @@ pip install --upgrade git+https://github.com/GeertUU/SurfaceAnisotropyCalculator
 
 
 ## Changelog
+0.3.8
+Added scaled genus calculator
+
 0.3.6
 Added a stack processor that works from an array
 
