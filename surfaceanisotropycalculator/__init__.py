@@ -16,9 +16,9 @@
 '''
 
 
-__version__ = '0.3.8'
+__version__ = '0.3.9'
 
-from surfaceanisotropycalculator.anisotropyclass import MeshCalculator, MeshFromFile
+from surfaceanisotropycalculator.anisotropyclass import MeshCalculator, MeshFromFile, MeshCalculatorLowerMemory
 from surfaceanisotropycalculator.stackanalysis import MeshFromStack, MeshFromLif, MeshFromImageStack
 
 #make visible for 'from imageAnalysis import *'

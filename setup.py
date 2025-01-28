@@ -20,7 +20,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'surfaceanisotropycalculator',
-    version = '0.3.8',
+    version = '0.3.9',
 
     url='https://github.com/GeertUU/SurfaceAnisotropyCalculator',
     author='Geert',
