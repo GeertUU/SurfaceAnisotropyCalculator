@@ -91,7 +91,7 @@ class MeshCalculator():
         v : numpy array (N x 3)
             List of verteces of mesh.
         f : numpy array of integers (M x 3)
-            Array of groups of 3 indeces which together form a vertex.
+            Array of groups of 3 indeces which together form a face.
 
         Returns
         -------
@@ -625,13 +625,149 @@ class MeshCalculator():
             print("Saving failed")
             
             
+class MeshCalculatorLowerMemory(MeshCalculator):
+    """
+    Wrapper class which needs less (initial) memory
+    """
+    def __init__(self, v, f):
+        """
+        Initialize class instance.
+
+        Parameters
+        ----------
+        v : numpy array (N x 3)
+            List of verteces of mesh.
+        f : numpy array of integers (M x 3)
+            Array of groups of 3 indeces which together form a vertex.
+
+        Returns
+        -------
+        None.
+
+        """
+        self.verteces = v
+        self.faces = f
+
+        # Collect the maximum and minimum values along the different axes
+        self.maxs = np.max(self.verteces, axis=0)
+        self.mins = np.min(self.verteces, axis=0)
+
+        # To keep track of what has been calculated we initialize an empty dict
+        self.resetcalc()
+        
+        faces = []
+        vfaces = [set() for _ in v]
+        vneighbors = [set() for _ in v]
+        fneighbors = [set() for _ in f]
+        for numf, face in enumerate(self.faces):
+            thisface = list(face)
+            for v1, v2, v3 in ntuples(face, 3):
+                #register the vertexcoordinates with the face
+                thisface += list(self.verteces[v1])
+                #register the face with the vertex
+                vfaces[v1].add(numf)
+                vneighbors[v1].update([v2,v3])
+            faces.append(thisface)
+
+        self.v = pd.DataFrame(v, columns=["x","y","z"])
+        self.v["faces"] = vfaces
+        self.v["neighbors"] = vneighbors
+
+        for numf, face in enumerate(self.faces):
+            #find neighboring faces
+            for v1, v2 in ntuples(face, 2):
+                for neighbor in self.v["faces"][v1]:
+                    if numf != neighbor and v2 in self.faces[neighbor]:
+                        fneighbors[numf].add(neighbor)
+                        
+        self.f = pd.DataFrame(faces, columns=["v1","v2","v3", "x1", 'y1', 'z1', "x2", 'y2', 'z2', "x3", 'y3', 'z3'])
+        self.f["neighbors"] = fneighbors
+        
+    
+    def _getw2edge(self, v1, v2, f1, f2):
+        """
+        Calculate (1/4 * of edge length * dihedral angle) for an edge
+
+        The dihedral angle is calculated using the method suggested here:
+        https://math.stackexchange.com/questions/47059/how-do-i-calculate-a-dihedral-angle-given-cartesian-coordinates
+        In short: we find the normal of one face in the coordinate system 
+        composed of the other normal, the edge and the crossproduct of these.
+        Then the arctan2 function allows for determination of correct angle.
+        
+        Parameters
+        ----------
+        v1 : int
+            Index of vertex at end of edge
+        v2 : int
+            Index of vertex at beginning of edge
+        f1 : int
+            Index of the face on the right hand side of the edge
+        f2 : int
+            Index of the face on the left hand side of the edge
+
+        Returns
+        -------
+        alphae : float
+            The dihedral angle.
+
+        """
+        dx = self.v.at[v1, 'x'] - self.v.at[v2, 'x']
+        dy = self.v.at[v1, 'y'] - self.v.at[v2, 'y']
+        dz = self.v.at[v1, 'z'] - self.v.at[v2, 'z']
+        edge = np.array([dx,dy,dz])
+        edgelen = np.linalg.norm(edge)
+        normedge = edge/edgelen
+        facenormal = [self.f.at[f1, 'xn'], self.f.at[f1, 'yn'], self.f.at[f1, 'zn']]
+        neighbornormal = [self.f.at[f2, 'xn'], self.f.at[f2, 'yn'], self.f.at[f2, 'zn']]
+        #finding the last coordinate direction
+        m = np.cross(facenormal, normedge)
+        #tan(alphae) = y/x, where x is parallel part of the 2 normals, y normal part
+        alphae = np.arctan2(np.dot(neighbornormal, m), np.dot(neighbornormal, facenormal))
+        return (edgelen * alphae * 0.25)
+    
+    
+    def _getlocalw2(self, face):
+        w2face = 0
+        edges1 = {(face.v1,face.v2), (face.v2,face.v3), (face.v3,face.v1)}
+        for f2 in face.neighbors:
+            negedges2 = ntuples([self.f.at[f2,'v3'],self.f.at[f2,'v2'], self.f.at[f2,'v1']],2)
+            for edge in negedges2:
+                if edge in edges1:
+                    w2face += self._getw2edge(edge[1], edge[0], face.name, f2)
+        return w2face
+            
+    
+    def getW2(self):
+        """
+        Calculate the Minkowski scalar W_2, i.e. the mean curvature
+
+        Returns
+        -------
+        float
+            Minkowski scalar W_2 of the current surface.
+
+        """
+        if not self._properties.get("normals"):
+            self._getnormals()
+        # if not self._properties.get("edges"):
+        #     self._getedgevector()
+        # if not self._properties.get("antiface"):
+        #     self._getantifaces()
+        
+        self.f['w2'] = self.f.apply(lambda x: self._getlocalw2(x), axis=1)
+
+        self.W2 = 1/3*self.f.w2.sum()
+        self._properties["w2"] = True
+        return self.W2
+      
 
 
-class MeshFromFile(MeshCalculator):
+
+class MeshFromFile(MeshCalculatorLowerMemory):
     """
     Simple wrapper class to import mesh from a file
     """
-    def __init__(self, filename):
+    def __init__(self, filename, lowmem=False):
         """
         Initialize class instance
 
@@ -640,14 +776,27 @@ class MeshFromFile(MeshCalculator):
         filename : str
             Path + filename + extension of the mesh file. Supported extensions
             .obj, .off, .stl, .wrl, .ply, .mesh.
+        lowmem : bool
+            Wether to use the "MeshCalculatorLowerMemory". The lower memory
+            class does not create a dataframe with information on edges.
 
         Returns
         -------
         None.
 
         """
+        self.edgesinmemory = not lowmem
         self.filename = filename
         v, f = igl.read_triangle_mesh(filename)
         nv, _, _, nf = igl.remove_duplicate_vertices(v, f, 1e-7)
-        MeshCalculator.__init__(self, nv, nf)
-
+        if self.edgesinmemory:
+            MeshCalculator.__init__(self, nv, nf)
+        else:
+            MeshCalculatorLowerMemory.__init__(self, nv, nf)
+            
+        
+    def getW2(self):
+        if self.edgesinmemory:
+            MeshCalculator.getW2(self)
+        else:
+            MeshCalculatorLowerMemory.getW2(self)

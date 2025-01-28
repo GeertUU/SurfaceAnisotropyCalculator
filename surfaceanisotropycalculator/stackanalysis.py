@@ -19,7 +19,7 @@ import igl
 import skimage
 
 from readlif.reader import LifFile
-from surfaceanisotropycalculator.anisotropyclass import MeshCalculator
+from surfaceanisotropycalculator.anisotropyclass import MeshCalculator, MeshCalculatorLowerMemory
 
 
 
@@ -77,7 +77,7 @@ def createoptimalMesh(image, test='auto', **kwargs):
     return bestmesh, maxarea, correcttreshold
 
 
-class MeshFromLif(MeshCalculator):
+class MeshFromLif(MeshCalculatorLowerMemory):
     """
     Simple wrapper class to import mesh from an image stack in .lif format.
     
@@ -95,6 +95,9 @@ class MeshFromLif(MeshCalculator):
             default is 'auto', for which the function automatically generates an
             iterator containing all the integers between the smallest and biggest 
             intensity values in the image.
+        lowmem : bool
+            Wether to use the "MeshCalculatorLowerMemory". The lower memory
+            class does not create a dataframe with information on edges.
         **kwargs : dict
             Any optional/keyword arguments that should be passed to
             skimage.measure.marching_cubes. 
@@ -103,10 +106,11 @@ class MeshFromLif(MeshCalculator):
     -------
         None.
     """
-    def __init__(self, filename, channel, n=0, test='auto', **kwargs):
+    def __init__(self, filename, channel, n=0, test='auto', lowmem=False, **kwargs):
         """
         Initialize class instance
         """    
+        self.edgesinmemory = not lowmem
         myimg = LifFile(filename).get_image(n)
         imgsize = (myimg.dims_n[1], myimg.dims_n[2])
         img = np.fromiter(myimg.get_iter_z(c=channel), np.dtype((int, imgsize)))
@@ -117,13 +121,24 @@ class MeshFromLif(MeshCalculator):
         print(f'Best mesh at threshold {threshold}')
         v, f, normals, values = mesh
         nv, _, _, nf = igl.remove_duplicate_vertices(v, f, 1e-7)
-        MeshCalculator.__init__(self, nv, nf)
+        
+        if self.edgesinmemory:
+            MeshCalculator.__init__(self, nv, nf)
+        else:
+            MeshCalculatorLowerMemory.__init__(self, nv, nf)
+            
+        
+    def getW2(self):
+        if self.edgesinmemory:
+            MeshCalculator.getW2(self)
+        else:
+            MeshCalculatorLowerMemory.getW2(self)
         
 
 
 
 
-class MeshFromStack(MeshCalculator):
+class MeshFromStack(MeshCalculatorLowerMemory):
     """
     Simple wrapper class to import mesh from an image stack with manual spacings
     
@@ -138,6 +153,9 @@ class MeshFromStack(MeshCalculator):
             default is 'auto', for which the function automatically generates an
             iterator containing all the integers between the smallest and biggest 
             intensity values in the image.
+        lowmem : bool
+            Wether to use the "MeshCalculatorLowerMemory". The lower memory
+            class does not create a dataframe with information on edges.
         **kwargs : dict
             Any optional/keyword arguments that should be passed to
             skimage.measure.marching_cubes.
@@ -146,10 +164,11 @@ class MeshFromStack(MeshCalculator):
     -------
         None.
     """
-    def __init__(self, filename, channel, test='auto', **kwargs):
+    def __init__(self, filename, channel, test='auto', lowmem=False, **kwargs):
         """
         Initialize class instance
         """
+        self.edgesinmemory = not lowmem
         myimg = skimage.io.imread(filename)
         try:
             grayimg = myimg[:,:,:, channel]
@@ -159,11 +178,21 @@ class MeshFromStack(MeshCalculator):
         print(f'Best mesh at threshold {threshold}')
         v, f, normals, values = mesh
         nv, _, _, nf = igl.remove_duplicate_vertices(v, f, 1e-7)
-        MeshCalculator.__init__(self, nv, nf)
+        if self.edgesinmemory:
+            MeshCalculator.__init__(self, nv, nf)
+        else:
+            MeshCalculatorLowerMemory.__init__(self, nv, nf)
+            
+        
+    def getW2(self):
+        if self.edgesinmemory:
+            MeshCalculator.getW2(self)
+        else:
+            MeshCalculatorLowerMemory.getW2(self)
         
         
         
-class MeshFromImageStack(MeshCalculator):
+class MeshFromImageStack(MeshCalculatorLowerMemory):
     """
     Simple wrapper class to import mesh from an image stack with manual spacings
     
@@ -178,6 +207,9 @@ class MeshFromImageStack(MeshCalculator):
             default is 'auto', for which the function automatically generates an
             iterator containing all the integers between the smallest and biggest 
             intensity values in the image.
+        lowmem : bool
+            Wether to use the "MeshCalculatorLowerMemory". The lower memory
+            class does not create a dataframe with information on edges.
         **kwargs : dict
             Any optional/keyword arguments that should be passed to
             skimage.measure.marching_cubes.
@@ -186,10 +218,11 @@ class MeshFromImageStack(MeshCalculator):
     -------
         None.
     """
-    def __init__(self, image, channel, test='auto', **kwargs):
+    def __init__(self, image, channel, test='auto', lowmem=False, **kwargs):
         """
         Initialize class instance
         """
+        self.edgesinmemory = not lowmem
         try:
             grayimg = image[:,:,:, channel]
         except IndexError:
@@ -198,4 +231,14 @@ class MeshFromImageStack(MeshCalculator):
         print(f'Best mesh at threshold {threshold}')
         v, f, normals, values = mesh
         nv, _, _, nf = igl.remove_duplicate_vertices(v, f, 1e-7)
-        MeshCalculator.__init__(self, nv, nf)
+        if self.edgesinmemory:
+            MeshCalculator.__init__(self, nv, nf)
+        else:
+            MeshCalculatorLowerMemory.__init__(self, nv, nf)
+            
+        
+    def getW2(self):
+        if self.edgesinmemory:
+            MeshCalculator.getW2(self)
+        else:
+            MeshCalculatorLowerMemory.getW2(self)
