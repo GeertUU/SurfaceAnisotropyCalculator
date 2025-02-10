@@ -1,5 +1,5 @@
 '''
-    Copyright (C) 2023-2024  Geert Schulpen
+    Copyright (C) 2023-2025  Geert Schulpen
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,14 +16,15 @@
 '''
 
 
-__version__ = '0.3.9'
+__version__ = '0.4.0'
 
-from surfaceanisotropycalculator.anisotropyclass import MeshCalculator, MeshFromFile, MeshCalculatorLowerMemory
-from surfaceanisotropycalculator.stackanalysis import MeshFromStack, MeshFromLif, MeshFromImageStack
+from surfaceanisotropycalculator.anisotropyclass import MeshCalculator_legacy, MeshCalculator
+from surfaceanisotropycalculator.stackanalysis import MeshFromFile, MeshFromStack, MeshFromLif, MeshFromImageStack
 
 #make visible for 'from imageAnalysis import *'
 __all__ = [
     'MeshCalculator',
+    'MeshCalculator_legacy',
     'MeshFromFile',
     'MeshFromStack',
     'MeshFromLif',

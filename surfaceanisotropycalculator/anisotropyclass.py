@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    Copyright (C) 2023-2024  Geert Schulpen
+    Copyright (C) 2023-2025  Geert Schulpen
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -24,8 +24,6 @@ Helper function to iterate over ntuples in an array (wrapping)
 """
 def ntuples(lst, n):
     return zip(*[np.concatenate((lst[i:],lst[:i])) for i in range(n)])
-    
-
 
 """
 Helper function to enable renumbering faces
@@ -75,11 +73,9 @@ def binarySearchCount(arr, key):
     return False, count
 
 
-
-
-class MeshCalculator():
+class MeshCalculator_legacy():
     """
-    Class to calculate stuff based on a mesh.
+    Old class to calculate stuff based on a mesh.
     """
 
     def __init__(self, v, f):
@@ -147,7 +143,8 @@ class MeshCalculator():
                     if numf != neighbor and v2 in self.faces[neighbor]:
                         fneighbors[numf].add(neighbor)
                         
-        self.f = pd.DataFrame(faces, columns=["v1","v2","v3", "x1", 'y1', 'z1', "x2", 'y2', 'z2', "x3", 'y3', 'z3'])
+        self.f = pd.DataFrame(faces, columns=["v1","v2","v3", "x1", 'y1', 'z1', 
+                                              "x2", 'y2', 'z2', "x3", 'y3', 'z3'])
         self.f["neighbors"] = fneighbors
         self.f["edges"] = fedges
         self.e = pd.DataFrame(edges, columns=['v1', 'v2', 'f', 'loc1', 'loc2'])
@@ -182,7 +179,7 @@ class MeshCalculator():
     def _getnormals(self):
         """
         Make a Mx3 array of normal vectors for every face. The vectors are not 
-        normalized.
+        normalized. Vectors point away from high intensity if made from image.
 
         Returns
         -------
@@ -190,11 +187,11 @@ class MeshCalculator():
 
         """
         #take a cross product manually
-        self.f['xn'] = ((self.f.y2-self.f.y1)*(self.f.z3-self.f.z1)-
+        self.f['xn'] = -((self.f.y2-self.f.y1)*(self.f.z3-self.f.z1)-
                             (self.f.z2-self.f.z1)*(self.f.y3-self.f.y1))
-        self.f['yn'] = ((self.f.z2-self.f.z1)*(self.f.x3-self.f.x1)-
+        self.f['yn'] = -((self.f.z2-self.f.z1)*(self.f.x3-self.f.x1)-
                             (self.f.x2-self.f.x1)*(self.f.z3-self.f.z1))
-        self.f['zn'] = ((self.f.x2-self.f.x1)*(self.f.y3-self.f.y1)-
+        self.f['zn'] = -((self.f.x2-self.f.x1)*(self.f.y3-self.f.y1)-
                             (self.f.y2-self.f.y1)*(self.f.x3-self.f.x1))
             
         # self.normals = np.cross(self.verteces[:, 1]-self.verteces[:, 0],
@@ -373,6 +370,7 @@ class MeshCalculator():
         facenormal = [myface.xn, myface.yn, myface.zn]
         antiface = self.f.loc[edge.antiface]
         neighbornormal = [antiface.xn, antiface.yn, antiface.zn]
+        #Note that normals are not normalized, but that is not necessary since vector lenghts cancel in final calculation
         #finding the last coordinate direction
         m = np.cross(facenormal, normedge)
         #tan(alphae) = y/x, where x is parallel part of the 2 normals, y normal part
@@ -531,68 +529,6 @@ class MeshCalculator():
         self.beta021 = self.W021eigenvals[0] / self.W021eigenvals[-1]
         self._properties["beta021"] = True
 
-    def cropmesh(self, maxx=None, minx=None, maxy=None, miny=None, maxz=None, minz=None):
-        """
-        Crop all verteces that are outside given region. Also removes faces.
-        
-        Parameters
-        ----------
-        maxx : float, optional
-            Maximum x value to be accepted. The default is max(self.v[:,0]).
-        minx : float, optional
-            Minimum x value to be accepted. The default is min(self.v[:,0]).
-        maxy : float, optional
-            Maximum y value to be accepted. The default is max(self.v[:,1]).
-        miny : float, optional
-            Minimum y value to be accepted. The default is min(self.v[:,1]).
-        maxz : float, optional
-            Maximum z value to be accepted. The default is max(self.v[:,2]).
-        minz : float, optional
-            Minimum z value to be accepted. The default is min(self.v[:,2]).
-
-        Returns
-        -------
-        None.
-
-        """
-        if not maxx:
-            maxx = self.maxs[0]
-        if not maxy:
-            maxy = self.maxs[1]
-        if not maxz:
-            maxz = self.maxs[2]
-        if not minx:
-            minx = self.mins[0]
-        if not miny:
-            miny = self.mins[1]
-        if not minz:
-            minz = self.mins[2]
-        
-        self.v.drop(self.v[(self.v.x<minx) | (self.v.x>maxx) | 
-                           (self.v.y<miny) | (self.v.y>maxy) |
-                           (self.v.z<minz) | (self.v.z>maxz)].index, inplace=True)
-        
-        self.f.drop(self.f[(self.f.x1<minx) | (self.f.x1>maxx) |
-                           (self.f.y1<miny) | (self.f.y1>maxy) |
-                           (self.f.z1<minz) | (self.f.z1>maxz) |
-                           (self.f.x2<minx) | (self.f.x2>maxx) |
-                           (self.f.y2<miny) | (self.f.y2>maxy) |
-                           (self.f.z2<minz) | (self.f.z2>maxz) |
-                           (self.f.x3<minx) | (self.f.x3>maxx) |
-                           (self.f.y3<miny) | (self.f.y3>maxy) |
-                           (self.f.z3<minz) | (self.f.z3>maxz)].index, inplace=True)
-        
-        
-        self.v['newfaces'] = self.v.apply(lambda x: [f for f in x.faces if f in self.f.index], axis=1)
-        self.v = self.v[self.v['newfaces'].map(lambda d: len(d)) > 0]
-        self.v = self.v.drop('faces', axis=1).rename({'newfaces': 'faces'}, axis=1)
-        self.f['newfaces'] = self.f.apply(lambda x: [f for f in x.neighbors if f in self.f.index], axis=1)
-        #self.f = self.f[self.f['newfaces'].map(lambda d: len(d)) > 0]
-        self.f = self.f.drop('neighbors', axis=1).rename({'newfaces': 'neighbors'}, axis=1)
-        
-        #After changing the mesh one should reset all the performed calculations
-        self.resetcalc()
-
     def savemesh(self, file):
         """
         Save the mesh. Supported extensions .obj, .off, .stl, .wrl, .ply .mesh.
@@ -624,10 +560,9 @@ class MeshCalculator():
         else:
             print("Saving failed")
             
-            
-class MeshCalculatorLowerMemory(MeshCalculator):
+class MeshCalculator(MeshCalculator_legacy):
     """
-    Wrapper class which needs less (initial) memory
+    Class to calculate stuff based on a mesh.
     """
     def __init__(self, v, f):
         """
@@ -663,7 +598,7 @@ class MeshCalculatorLowerMemory(MeshCalculator):
             thisface = list(face)
             for v1, v2, v3 in ntuples(face, 3):
                 #register the vertexcoordinates with the face
-                thisface += list(self.verteces[v1])
+                #thisface += list(self.verteces[v1])
                 #register the face with the vertex
                 vfaces[v1].add(numf)
                 vneighbors[v1].update([v2,v3])
@@ -680,9 +615,66 @@ class MeshCalculatorLowerMemory(MeshCalculator):
                     if numf != neighbor and v2 in self.faces[neighbor]:
                         fneighbors[numf].add(neighbor)
                         
-        self.f = pd.DataFrame(faces, columns=["v1","v2","v3", "x1", 'y1', 'z1', "x2", 'y2', 'z2', "x3", 'y3', 'z3'])
+        self.f = pd.DataFrame(faces, columns=["v1","v2","v3"])
         self.f["neighbors"] = fneighbors
         
+    
+    def _getcenters(self):
+        """
+        Make a Mx3 array of the center (average of the verteces) of every face
+
+        Returns
+        -------
+        None.
+
+        """
+        self.f['xc'] = self.f.apply(lambda l: self.v.loc[[l.v1, l.v2,l.v3],"x"].sum()/3, axis=1)
+        self.f['yc'] = self.f.apply(lambda l: self.v.loc[[l.v1, l.v2,l.v3],"y"].sum()/3, axis=1)
+        self.f['zc'] = self.f.apply(lambda l: self.v.loc[[l.v1, l.v2,l.v3],"z"].sum()/3, axis=1)
+        self._properties["centers"] = True
+        
+    def _getnormal(self, face):
+        coords = self.v.loc[[face.v1, face.v2, face.v3], ["x","y","z"]]
+        normal = np.cross(coords.iloc[2,:]-coords.iloc[0,:], coords.iloc[1,:]-coords.iloc[0,:])
+        return pd.Series(normal, index=["xn","yn","zn"])
+
+    def _getnormals(self):
+        """
+        Make a Mx3 array of normal vectors for every face. The vectors are not 
+        normalized. Vectors point away from high intensity if made from image.
+
+        Returns
+        -------
+        None.
+
+        """
+        normals = self.f.apply(self._getnormal, axis=1)
+        self.f = self.f.join(normals)
+        self._properties["normals"] = True
+        
+    def _getinternalangle(self, face):
+        #The angle between 2 vectors is arccos[(a.b)/((|a||b|)]
+        coords = self.v.loc[[face.v1, face.v2, face.v3], ["x","y","z"]]
+        e1 = coords.iloc[1,:]-coords.iloc[0,:]
+        e2 = coords.iloc[2,:]-coords.iloc[1,:]
+        e3 = coords.iloc[0,:]-coords.iloc[2,:]
+        a1 = np.arccos(np.dot(-e3, e1)/(np.linalg.norm(e3)*(np.linalg.norm(e1))))
+        a2 = np.arccos(np.dot(-e1, e2)/(np.linalg.norm(e1)*(np.linalg.norm(e2))))
+        a3 = np.arccos(np.dot(-e2, e3)/(np.linalg.norm(e2)*(np.linalg.norm(e3))))
+        return pd.Series([a1, a2, a3], index=["a1","a2","a3"])
+    
+    def _getinternalangles(self):
+        """
+        Calculate the internal angels for all verteces for every face
+
+        Returns
+        -------
+        None.
+
+        """
+        angles = self.f.apply(self._getinternalangle, axis=1)
+        self.f = self.f.join(angles)
+        self._properties["internal angles"] = True
     
     def _getw2edge(self, v1, v2, f1, f2):
         """
@@ -754,49 +746,11 @@ class MeshCalculatorLowerMemory(MeshCalculator):
         # if not self._properties.get("antiface"):
         #     self._getantifaces()
         
-        self.f['w2'] = self.f.apply(lambda x: self._getlocalw2(x), axis=1)
+        self.f['w2'] = self.f.apply(self._getlocalw2, axis=1)
 
         self.W2 = 1/3*self.f.w2.sum()
         self._properties["w2"] = True
         return self.W2
-      
-
-
-
-class MeshFromFile(MeshCalculatorLowerMemory):
-    """
-    Simple wrapper class to import mesh from a file
-    """
-    def __init__(self, filename, lowmem=False):
-        """
-        Initialize class instance
-
-        Parameters
-        ----------
-        filename : str
-            Path + filename + extension of the mesh file. Supported extensions
-            .obj, .off, .stl, .wrl, .ply, .mesh.
-        lowmem : bool
-            Wether to use the "MeshCalculatorLowerMemory". The lower memory
-            class does not create a dataframe with information on edges.
-
-        Returns
-        -------
-        None.
-
-        """
-        self.edgesinmemory = not lowmem
-        self.filename = filename
-        v, f = igl.read_triangle_mesh(filename)
-        nv, _, _, nf = igl.remove_duplicate_vertices(v, f, 1e-7)
-        if self.edgesinmemory:
-            MeshCalculator.__init__(self, nv, nf)
-        else:
-            MeshCalculatorLowerMemory.__init__(self, nv, nf)
-            
-        
-    def getW2(self):
-        if self.edgesinmemory:
-            MeshCalculator.getW2(self)
-        else:
-            MeshCalculatorLowerMemory.getW2(self)
+    
+    
+    
