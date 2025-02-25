@@ -15,6 +15,7 @@
 
 
 from setuptools import setup, find_packages
+from setuptools import Extension
 from Cython.Build import cythonize
 
 cmdclass = { }
