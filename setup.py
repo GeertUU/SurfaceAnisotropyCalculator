@@ -20,9 +20,9 @@ from Cython.Build import cythonize
 cmdclass = { }
 ext_modules = [ ]
 ext_modules += [
-        Extension("CythonFunctions", [ "surfaceanisotropycalculator/CythonFunctions.pyx" ]),
-    ]
-    cmdclass.update({ 'build_ext': build_ext })
+    Extension("CythonFunctions", [ "surfaceanisotropycalculator/CythonFunctions.pyx" ]),
+]
+cmdclass.update({ 'build_ext': build_ext })
 
 setup(
     name = 'surfaceanisotropycalculator',
