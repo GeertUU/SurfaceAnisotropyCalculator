@@ -22,7 +22,7 @@ from Cython.Distutils import build_ext
 cmdclass = { }
 ext_modules = [ ]
 ext_modules += [
-    Extension("CythonFunctions", [ "surfaceanisotropycalculator/CythonFunctions.pyx" ]),
+    Extension("CythonFunctions", [ "surfaceanisotropycalculator/CythonFunctions.pyx" ], include_dirs=[numpy.get_include()]),
 ]
 cmdclass.update({ 'build_ext': build_ext })
 
