@@ -31,11 +31,6 @@ setup(
     url='https://github.com/GeertUU/SurfaceAnisotropyCalculator',
     author='Geert',
     author_email='g.h.a.schulpen@uu.nl',
-    
-    
-    
-    
-    ext_modules = cythonize("surfaceanisotropycalculator\CythonFunctions.pyx")
 
     packages=find_packages(include=["surfaceanisotropycalculator", "surfaceanisotropycalculator.*"]),
     cmdclass = cmdclass,
