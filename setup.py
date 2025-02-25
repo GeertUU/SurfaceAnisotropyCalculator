@@ -15,16 +15,18 @@
 
 
 from setuptools import setup, find_packages
-
+from Cython.Build import cythonize
 
 
 setup(
     name = 'surfaceanisotropycalculator',
-    version = '0.4.0',
+    version = '0.5.0',
 
     url='https://github.com/GeertUU/SurfaceAnisotropyCalculator',
     author='Geert',
     author_email='g.h.a.schulpen@uu.nl',
+    
+    ext_modules = cythonize("surfaceanisotropycalculator\CythonFunctions.pyx")
 
     packages=find_packages(include=["surfaceanisotropycalculator", "surfaceanisotropycalculator.*"]),
     
@@ -34,5 +36,6 @@ setup(
         'pandas',
         'scikit-image',
         'readlif',
+        'Cython' 
     ],
 )

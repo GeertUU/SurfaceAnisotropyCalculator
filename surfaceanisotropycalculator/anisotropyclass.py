@@ -18,6 +18,8 @@ import pandas as pd
 
 import igl
 
+import CythonFunctions
+
 
 """
 Helper function to iterate over ntuples in an array (wrapping)
@@ -633,10 +635,6 @@ class MeshCalculator(MeshCalculator_legacy):
         self.f['zc'] = self.f.apply(lambda l: self.v.loc[[l.v1, l.v2,l.v3],"z"].sum()/3, axis=1)
         self._properties["centers"] = True
         
-    def _getnormal(self, face):
-        coords = self.v.loc[[face.v1, face.v2, face.v3], ["x","y","z"]]
-        normal = np.cross(coords.iloc[2,:]-coords.iloc[0,:], coords.iloc[1,:]-coords.iloc[0,:])
-        return pd.Series(normal, index=["xn","yn","zn"])
 
     def _getnormals(self):
         """
@@ -648,20 +646,14 @@ class MeshCalculator(MeshCalculator_legacy):
         None.
 
         """
-        normals = self.f.apply(self._getnormal, axis=1)
-        self.f = self.f.join(normals)
+        fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=np.float32)
+        norms = np.zeros(fs.shape, dtype=np.float32)
+        vs = self.v.loc[:,["x"," y","z"]].to_numpy(dtype=np.float32)
+        test = CythonFunctions.getnormals(fs, vs, norms)
+        norms = pd.DataFrame(norms, columns=["xn","yn","zn"])
+        self.f = self.f.join(norms)
         self._properties["normals"] = True
         
-    def _getinternalangle(self, face):
-        #The angle between 2 vectors is arccos[(a.b)/((|a||b|)]
-        coords = self.v.loc[[face.v1, face.v2, face.v3], ["x","y","z"]]
-        e1 = coords.iloc[1,:]-coords.iloc[0,:]
-        e2 = coords.iloc[2,:]-coords.iloc[1,:]
-        e3 = coords.iloc[0,:]-coords.iloc[2,:]
-        a1 = np.arccos(np.dot(-e3, e1)/(np.linalg.norm(e3)*(np.linalg.norm(e1))))
-        a2 = np.arccos(np.dot(-e1, e2)/(np.linalg.norm(e1)*(np.linalg.norm(e2))))
-        a3 = np.arccos(np.dot(-e2, e3)/(np.linalg.norm(e2)*(np.linalg.norm(e3))))
-        return pd.Series([a1, a2, a3], index=["a1","a2","a3"])
     
     def _getinternalangles(self):
         """
@@ -672,7 +664,11 @@ class MeshCalculator(MeshCalculator_legacy):
         None.
 
         """
-        angles = self.f.apply(self._getinternalangle, axis=1)
+        fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=np.float32)
+        angles = np.zeros(fs.shape, dtype=np.float32)
+        vs = self.v.loc[:,["x"," y","z"]].to_numpy(dtype=np.float32)
+        test = CythonFunctions.getinternalangles(fs, vs, angles)
+        angles = pd.DataFrame(np.arccos(angles), columns=["a1","a2","a3"])
         self.f = self.f.join(angles)
         self._properties["internal angles"] = True
     
