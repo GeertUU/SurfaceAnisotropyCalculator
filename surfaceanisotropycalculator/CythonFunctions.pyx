@@ -18,10 +18,10 @@ cimport numpy as np
 from libc.math cimport sqrt
 
 
-cpdef int getinternalangles(long long int[:,:] f, float[:,:] v, float[:,:] result):
+cpdef int getinternalangles(long long int[:,:] f, double[:,:] v, double[:,:] result):
     cdef long long int i, lenf, v0, v1, v2
-    cdef float[:] p0, p1, p2
-    cdef float dxa, dya, dza, dxb, dyb, dzb, dxc, dyc, dzc, a1, a2, a3, temp
+    cdef double[:] p0, p1, p2
+    cdef double dxa, dya, dza, dxb, dyb, dzb, dxc, dyc, dzc, a1, a2, a3, temp
     lenf = f.shape[0]
     for i in range(lenf):
         v0 = f[i,0]
@@ -54,10 +54,10 @@ cpdef int getinternalangles(long long int[:,:] f, float[:,:] v, float[:,:] resul
     return 1
         
         
-cpdef int getnormals(long long int[:,:] f, float[:,:] v, float[:,:] result):
+cpdef int getnormals(long long int[:,:] f, double[:,:] v, double[:,:] result):
     cdef long long int i, lenf, v0, v1, v2
-    cdef float[:] p0, p1, p2, pn
-    cdef float xa, ya, za, xb, yb, zb
+    cdef double[:] p0, p1, p2, pn
+    cdef double xa, ya, za, xb, yb, zb
     p0 = np.zeros(3, dtype=np.float32)
     p1 = np.zeros(3, dtype=np.float32)
     p2 = np.zeros(3, dtype=np.float32)
