@@ -17,6 +17,12 @@
 from setuptools import setup, find_packages
 from Cython.Build import cythonize
 
+cmdclass = { }
+ext_modules = [ ]
+ext_modules += [
+        Extension("CythonFunctions", [ "surfaceanisotropycalculator/CythonFunctions.pyx" ]),
+    ]
+    cmdclass.update({ 'build_ext': build_ext })
 
 setup(
     name = 'surfaceanisotropycalculator',
@@ -26,10 +32,14 @@ setup(
     author='Geert',
     author_email='g.h.a.schulpen@uu.nl',
     
+    
+    
+    
     ext_modules = cythonize("surfaceanisotropycalculator\CythonFunctions.pyx")
 
     packages=find_packages(include=["surfaceanisotropycalculator", "surfaceanisotropycalculator.*"]),
-    
+    cmdclass = cmdclass,
+    ext_modules=ext_modules,
     install_requires=[
         'numpy',
         'libigl',
@@ -39,3 +49,4 @@ setup(
         'Cython' 
     ],
 )
+
