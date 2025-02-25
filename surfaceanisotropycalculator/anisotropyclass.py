@@ -646,7 +646,7 @@ class MeshCalculator(MeshCalculator_legacy):
         None.
 
         """
-        fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=np.float32)
+        fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=int)
         norms = np.zeros(fs.shape, dtype=np.float32)
         vs = self.v.loc[:,["x","y","z"]].to_numpy(dtype=np.float32)
         test = CythonFunctions.getnormals(fs, vs, norms)
@@ -664,7 +664,7 @@ class MeshCalculator(MeshCalculator_legacy):
         None.
 
         """
-        fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=np.float32)
+        fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=int)
         angles = np.zeros(fs.shape, dtype=np.float32)
         vs = self.v.loc[:,["x","y","z"]].to_numpy(dtype=np.float32)
         test = CythonFunctions.getinternalangles(fs, vs, angles)
