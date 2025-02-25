@@ -18,6 +18,7 @@ from setuptools import setup, find_packages
 from setuptools import Extension
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
+import numpy
 
 cmdclass = { }
 ext_modules = [ ]
