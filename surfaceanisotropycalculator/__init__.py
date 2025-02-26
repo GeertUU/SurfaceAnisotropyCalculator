@@ -16,7 +16,7 @@
 '''
 
 
-__version__ = '0.5.4'
+__version__ = '0.5.5'
 
 from surfaceanisotropycalculator.anisotropyclass import MeshCalculator_legacy, MeshCalculator
 from surfaceanisotropycalculator.stackanalysis import MeshFromFile, MeshFromStack, MeshFromLif, MeshFromImageStack
