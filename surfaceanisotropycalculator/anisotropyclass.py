@@ -646,9 +646,9 @@ class MeshCalculator(MeshCalculator_legacy):
         None.
 
         """
-        fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=int)
-        norms = np.zeros(fs.shape, dtype=float)
-        vs = self.v.loc[:,["x","y","z"]].to_numpy(dtype=float)
+        fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=np.longlong)
+        norms = np.zeros(fs.shape, dtype=np.double)
+        vs = self.v.loc[:,["x","y","z"]].to_numpy(dtype=np.double)
         test = CythonFunctions.getnormals(fs, vs, norms)
         norms = pd.DataFrame(norms, columns=["xn","yn","zn"])
         self.f = self.f.join(norms)
@@ -664,9 +664,9 @@ class MeshCalculator(MeshCalculator_legacy):
         None.
 
         """
-        fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=int)
-        angles = np.zeros(fs.shape, dtype=float)
-        vs = self.v.loc[:,["x","y","z"]].to_numpy(dtype=float)
+        fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=np.longlong)
+        angles = np.zeros(fs.shape, dtype=np.double)
+        vs = self.v.loc[:,["x","y","z"]].to_numpy(dtype=np.double)
         test = CythonFunctions.getinternalangles(fs, vs, angles)
         angles = pd.DataFrame(np.arccos(angles), columns=["a1","a2","a3"])
         self.f = self.f.join(angles)
