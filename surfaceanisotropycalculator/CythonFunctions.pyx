@@ -58,10 +58,10 @@ cpdef int getnormals(long long int[:,:] f, double[:,:] v, double[:,:] result):
     cdef long long int i, lenf, v0, v1, v2
     cdef double[:] p0, p1, p2, pn
     cdef double xa, ya, za, xb, yb, zb
-    p0 = np.zeros(3, dtype=np.float32)
-    p1 = np.zeros(3, dtype=np.float32)
-    p2 = np.zeros(3, dtype=np.float32)
-    pn = np.zeros(3, dtype=np.float32)
+    p0 = np.zeros(3, dtype=np.double)
+    p1 = np.zeros(3, dtype=np.double)
+    p2 = np.zeros(3, dtype=np.double)
+    pn = np.zeros(3, dtype=np.double)
     lenf = f.shape[0]
     for i in range(lenf):
         v0 = f[i,0]
