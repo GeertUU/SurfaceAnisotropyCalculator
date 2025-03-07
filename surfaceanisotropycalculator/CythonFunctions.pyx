@@ -18,8 +18,25 @@ cimport numpy as np
 from libc.math cimport sqrt
 
 
-cpdef int getinternalangles(long long int[:,:] f, double[:,:] v, double[:,:] result):
-    cdef long long int i, lenf, v0, v1, v2
+cpdef int getnormal(double[:]p0, double[:]p1, double[:]p2, double[:] result):
+    xa = p2[0] - p0[0]
+    ya = p2[1] - p0[1]
+    za = p2[2] - p0[2]
+    xb = p1[0] - p0[0]
+    yb = p1[1] - p0[1]
+    zb = p1[2] - p0[2]
+    result[0] = ya * zb - za * yb
+    result[1] = za * xb - xa * zb
+    result[2] = xa * yb - ya * xb
+    return 1
+
+# cpdef int initfunc(long int[:,:] face, double[:,:] vert, long int[:,:] f, double[:,:] v):
+#     cdef long int[:] vfaces, vneighbors, fneighbors
+#     vfaces = 
+
+
+cpdef int getinternalangles(long int[:,:] f, double[:,:] v, double[:,:] result):
+    cdef long int i, lenf, v0, v1, v2
     cdef double[:] p0, p1, p2
     cdef double dxa, dya, dza, dxb, dyb, dzb, dxc, dyc, dzc, a1, a2, a3, temp
     lenf = f.shape[0]
@@ -54,8 +71,8 @@ cpdef int getinternalangles(long long int[:,:] f, double[:,:] v, double[:,:] res
     return 1
         
         
-cpdef int getnormals(long long int[:,:] f, double[:,:] v, double[:,:] result):
-    cdef long long int i, lenf, v0, v1, v2
+cpdef int getnormals(long int[:,:] f, double[:,:] v, double[:,:] result):
+    cdef long int i, lenf, v0, v1, v2
     cdef double[:] p0, p1, p2, pn
     cdef double xa, ya, za, xb, yb, zb
     p0 = np.zeros(3, dtype=np.double)
@@ -70,13 +87,14 @@ cpdef int getnormals(long long int[:,:] f, double[:,:] v, double[:,:] result):
         p0 = v[v0,0:3]
         p1 = v[v1,0:3]
         p2 = v[v2,0:3]
-        xa = p2[0] - p0[0]
-        ya = p2[1] - p0[1]
-        za = p2[2] - p0[2]
-        xb = p1[0] - p0[0]
-        yb = p1[1] - p0[1]
-        zb = p1[2] - p0[2]
-        result[i,0] = ya * zb - za * yb
-        result[i,1] = za * xb - xa * zb
-        result[i,2] = xa * yb - ya * xb
+        getnormal(p0, p1, p2, pn)
+        # xa = p2[0] - p0[0]
+        # ya = p2[1] - p0[1]
+        # za = p2[2] - p0[2]
+        # xb = p1[0] - p0[0]
+        # yb = p1[1] - p0[1]
+        # zb = p1[2] - p0[2]
+        result[i,0] = pn[0]
+        result[i,1] = pn[1]
+        result[i,2] = pn[2]
     return 1

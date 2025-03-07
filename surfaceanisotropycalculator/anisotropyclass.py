@@ -592,34 +592,51 @@ class MeshCalculator(MeshCalculator_legacy):
         # To keep track of what has been calculated we initialize an empty dict
         self.resetcalc()
         
-        faces = []
+        fs = np.zeros(f.shape, dtype = np.long)
+        normals = np.zeros(f.shape, dtype = np.double)
         vfaces = [set() for _ in v]
         vneighbors = [set() for _ in v]
-        fneighbors = [set() for _ in f]
+        pn = np.zeros(3, dtype=np.double)
+        discarded = 0
         for numf, face in enumerate(self.faces):
-            thisface = list(face)
+            c1 = np.array(v[face[0]], dtype = np.double)
+            c2 = np.array(v[face[1]], dtype = np.double)
+            c3 = np.array(v[face[2]], dtype = np.double)
+            test = CythonFunctions.getnormal(c1, c2, c3, pn)
+            #if the area of the face is 0 we do not want to include it
+            if pn[0]==pn[1]==pn[2]==0: 
+                discarded += 1
+                continue
             for v1, v2, v3 in ntuples(face, 3):
-                #register the vertexcoordinates with the face
-                #thisface += list(self.verteces[v1])
                 #register the face with the vertex
-                vfaces[v1].add(numf)
+                vfaces[v1].add(numf - discarded)
                 vneighbors[v1].update([v2,v3])
-            faces.append(thisface)
+            fs[numf - discarded] = face
+            normals[numf - discarded] = pn
 
+        #remove all empty rows
+        fs = fs[:numf - discarded + 1]
+        normals = normals[:numf - discarded + 1]
+        fneighbors = [set() for _ in fs]
+        #create dataframe for vertices
         self.v = pd.DataFrame(v, columns=["x","y","z"])
         self.v["faces"] = vfaces
         self.v["neighbors"] = vneighbors
 
-        for numf, face in enumerate(self.faces):
+        for numf, face in enumerate(fs):
             #find neighboring faces
             for v1, v2 in ntuples(face, 2):
                 for neighbor in self.v["faces"][v1]:
-                    if numf != neighbor and v2 in self.faces[neighbor]:
+                    if numf != neighbor and v2 in fs[neighbor]:
                         fneighbors[numf].add(neighbor)
-                        
-        self.f = pd.DataFrame(faces, columns=["v1","v2","v3"])
+        #create dataframe for faces
+        self.f = pd.DataFrame(fs, columns=["v1","v2","v3"])
         self.f["neighbors"] = fneighbors
+        temp = pd.DataFrame(normals, columns=["xn","yn","zn"])
+        self.f[["xn","yn","zn"]] = temp
+        self._properties["normals"] = True
         
+    
     
     def _getcenters(self):
         """
@@ -646,7 +663,7 @@ class MeshCalculator(MeshCalculator_legacy):
         None.
 
         """
-        fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=np.longlong)
+        fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=np.long)
         norms = np.zeros(fs.shape, dtype=np.double)
         vs = self.v.loc[:,["x","y","z"]].to_numpy(dtype=np.double)
         test = CythonFunctions.getnormals(fs, vs, norms)
@@ -664,7 +681,7 @@ class MeshCalculator(MeshCalculator_legacy):
         None.
 
         """
-        fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=np.longlong)
+        fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=np.long)
         angles = np.zeros(fs.shape, dtype=np.double)
         vs = self.v.loc[:,["x","y","z"]].to_numpy(dtype=np.double)
         test = CythonFunctions.getinternalangles(fs, vs, angles)
