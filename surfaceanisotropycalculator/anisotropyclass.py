@@ -417,7 +417,7 @@ class MeshCalculator_legacy():
         self._properties["w2"] = True
         return self.W2
       
-    def getW3(self):
+    def getW3(self, Legacy=False):
         """
         Calculate the Minkowski scalar W_3, i.e. the total Guassian curvature
 
@@ -433,9 +433,11 @@ class MeshCalculator_legacy():
         if not self._properties.get("edge verteces"):
             self._findedgeverteces()
 
-        self.v['suminternalangles'] = self.v.apply(lambda x: self._suminternalangles(x.faces, x.name), axis=1)
-        self.v['w3'] = 2*np.pi - np.pi * self.v.edge - self.v.suminternalangles
-        # = self.v.apply(lambda x: 0 if x.edge else (2*np.pi - self._suminternalangles(x.faces, x.name)), axis=1)
+        self.v['summedangles'] = self.v.apply(lambda x: self._suminternalangles(x.faces, x.name), axis=1)
+        if Legacy:
+            self.v['w3'] = (1-self.v.edge) * (2*np.pi - self.v.summedangles)
+        else:
+            self.v['w3'] = 2*np.pi - np.pi*self.v.edge - self.v.summedangles
         self.W3 = 1/3*self.v.w3.sum()
         self._properties["W3"] = True
         
