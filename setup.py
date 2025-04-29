@@ -29,7 +29,7 @@ cmdclass.update({ 'build_ext': build_ext })
 
 setup(
     name = 'surfaceanisotropycalculator',
-    version = '0.5.6',
+    version = '0.5.8',
 
     url='https://github.com/GeertUU/SurfaceAnisotropyCalculator',
     author='Geert',
