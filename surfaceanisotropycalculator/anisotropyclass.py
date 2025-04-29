@@ -433,7 +433,9 @@ class MeshCalculator_legacy():
         if not self._properties.get("edge verteces"):
             self._findedgeverteces()
 
-        self.v['w3'] = self.v.apply(lambda x: 0 if x.edge else (2*np.pi - self._suminternalangles(x.faces, x.name)), axis=1)
+        self.v['suminternalangles'] = self.v.apply(lambda x: self._suminternalangles(x.faces, x.name), axis=1)
+        self.v['w3'] = 2*np.pi - np.pi * self.v.edge - self.v.suminternalangles
+        # = self.v.apply(lambda x: 0 if x.edge else (2*np.pi - self._suminternalangles(x.faces, x.name)), axis=1)
         self.W3 = 1/3*self.v.w3.sum()
         self._properties["W3"] = True
         
