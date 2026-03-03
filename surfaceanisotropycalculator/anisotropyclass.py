@@ -378,8 +378,26 @@ class MeshCalculator_legacy():
         #tan(alphae) = y/x, where x is parallel part of the 2 normals, y normal part
         alphae = np.arctan2(np.dot(neighbornormal, m), np.dot(neighbornormal, facenormal))
         return alphae
-        
     
+
+    # def getW0(self):
+    #     """
+    #     Possible implementation of finding the volume enclosed by a mesh. Only 
+    #     works on closed mesh, so not active now.
+
+    #     Returns
+    #     -------
+    #     None.
+
+    #     """
+    #     if not self._properties.get("normals"):
+    #         self._getnormals() 
+    #     if not self._properties.get("centers"):
+    #         self._getcenters() 
+    #     self.f['localVolume'] = (self.f.xc*self.f.xn + self.f.yc*self.f.yn + self.f.zc*self.f.zn)/6
+    #     self.W0 = self.f.localVolume.sum()
+    #     self._properties["W0"] = True
+
     def getW1(self):
         """
         Calculate the Minkowski scalar W_1, which corresponds to the total area
@@ -393,7 +411,7 @@ class MeshCalculator_legacy():
             self._getareas()
         self.W1 = self.f.area.sum()
         self._properties["W1"] = True
-        
+
     def getW2(self):
         """
         Calculate the Minkowski scalar W_2, i.e. the mean curvature
@@ -651,9 +669,9 @@ class MeshCalculator(MeshCalculator_legacy):
         None.
 
         """
-        self.f['xc'] = self.f.apply(lambda l: self.v.loc[[l.v1, l.v2,l.v3],"x"].sum()/3, axis=1)
-        self.f['yc'] = self.f.apply(lambda l: self.v.loc[[l.v1, l.v2,l.v3],"y"].sum()/3, axis=1)
-        self.f['zc'] = self.f.apply(lambda l: self.v.loc[[l.v1, l.v2,l.v3],"z"].sum()/3, axis=1)
+        self.f['xc'] = self.f.apply(lambda l: self.v.loc[[l.v1,l.v2,l.v3],"x"].sum()/3, axis=1)
+        self.f['yc'] = self.f.apply(lambda l: self.v.loc[[l.v1,l.v2,l.v3],"y"].sum()/3, axis=1)
+        self.f['zc'] = self.f.apply(lambda l: self.v.loc[[l.v1,l.v2,l.v3],"z"].sum()/3, axis=1)
         self._properties["centers"] = True
         
 

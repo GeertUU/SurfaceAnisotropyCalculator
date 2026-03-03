@@ -6,7 +6,7 @@ The project is in a very rudimentary state. The intended scope of the project is
 ## Info
 - Created by: Geert Schulpen
 - Email: g.h.a.schulpen@uu.nl
-- Version: 0.5.8
+- Version: 0.5.9
 
 
 ## Installation
@@ -32,6 +32,9 @@ pip install --upgrade git+https://github.com/GeertUU/SurfaceAnisotropyCalculator
 
 
 ## Changelog
+0.5.9
+Added the threshold value used for any mesh extraction from image stacks
+
 0.5.8
 Added correct handling for boundaries for W3
 

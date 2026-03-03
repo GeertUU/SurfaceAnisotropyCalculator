@@ -135,7 +135,12 @@ def MeshFromLif(filename, channel, n=0, test='auto', legacy=False, **kwargs):
 
     Returns
     -------
-        Instance of the "MeshCalculator" or "MeshCalculator_legacy" class.
+    mesh : MeshCalculator or MeshCalculator_legacy
+        Instance of the "MeshCalculator" or "MeshCalculator_legacy" class
+        containing the extracted mesh.
+    threshold : float
+        The threshold value that was used to create the mesh.
+
     """
     myimg = LifFile(filename).get_image(n)
     imgsize = (myimg.dims_n[1], myimg.dims_n[2])
@@ -172,7 +177,12 @@ def MeshFromStack(filename, channel, test='auto', legacy=False, **kwargs):
 
     Returns
     -------
-        Instance of the "MeshCalculator" or "MeshCalculator_legacy" class.
+    mesh : MeshCalculator or MeshCalculator_legacy
+        Instance of the "MeshCalculator" or "MeshCalculator_legacy" class
+        containing the extracted mesh.
+    threshold : float
+        The threshold value that was used to create the mesh.
+
     """
 
     myimg = skimage.io.imread(filename)
@@ -205,7 +215,12 @@ def MeshFromImageStack(image, channel, test='auto', legacy=False, **kwargs):
 
     Returns
     -------
-        Instance of the "MeshCalculator" or "MeshCalculator_legacy" class.
+    mesh : MeshCalculator or MeshCalculator_legacy
+        Instance of the "MeshCalculator" or "MeshCalculator_legacy" class
+        containing the extracted mesh.
+    threshold : float
+        The threshold value that was used to create the mesh.
+
     """
     
     try:
@@ -221,5 +236,5 @@ def MeshFromImageStack(image, channel, test='auto', legacy=False, **kwargs):
     else:
         mesh = MeshCalculator(nv, nf)
     # mesh.filename = filename
-    return mesh
+    return mesh, threshold
 
