@@ -56,7 +56,7 @@ def createoptimalMesh(image, test='auto', **kwargs):
 
     """
 
-    if test == 'auto':
+    if type(test) is str:
         info = [int(np.max(image)), int(np.min(image))]
         test = range(info[1], info[0])
     
