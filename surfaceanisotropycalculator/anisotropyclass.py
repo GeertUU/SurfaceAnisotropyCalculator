@@ -577,12 +577,8 @@ class MeshCalculator_legacy():
         
         self.exportv = myv[['x','y','z']].to_numpy()
         self.exportf = myf[['exv1','exv2','exv3']].to_numpy()
-        
-        testsave = igl.write_triangle_mesh(file, self.exportv, self.exportf)
-        if testsave:
-            print("Mesh saved succesfully")
-        else:
-            print("Saving failed")
+        igl.write_triangle_mesh(file, self.exportv, self.exportf)
+
             
 class MeshCalculator(MeshCalculator_legacy):
     """
@@ -620,7 +616,13 @@ class MeshCalculator(MeshCalculator_legacy):
         vneighbors = [set() for _ in v]
         pn = np.zeros(3, dtype=np.double)
         discarded = 0
-        for numf, face in enumerate(self.faces):
+        dupefaces = np.sum([np.isin(self.faces, x).all(1) for x in self.faces],
+                           axis=1) > 1
+        
+        for numf, (face, dupe) in enumerate(zip(self.faces, dupefaces)):
+            if dupe:
+                discarded += 1
+                continue
             c1 = np.array(v[face[0]], dtype = np.double)
             c2 = np.array(v[face[1]], dtype = np.double)
             c3 = np.array(v[face[2]], dtype = np.double)

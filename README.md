@@ -6,7 +6,7 @@ The project is in a very rudimentary state. The intended scope of the project is
 ## Info
 - Created by: Geert Schulpen
 - Email: g.h.a.schulpen@uu.nl
-- Version: 0.5.10
+- Version: 0.5.11
 
 
 ## Installation
@@ -32,6 +32,9 @@ pip install --upgrade git+https://github.com/GeertUU/SurfaceAnisotropyCalculator
 
 
 ## Changelog
+0.5.11
+Added a test to remove duplicated faces from the mesh. If any two faces have the same set of verteces they get removed.
+
 0.5.9
 Added the threshold value used for any mesh extraction from image stacks
 
