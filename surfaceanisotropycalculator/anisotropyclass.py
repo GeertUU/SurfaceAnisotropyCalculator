@@ -616,11 +616,17 @@ class MeshCalculator(MeshCalculator_legacy):
         vneighbors = [set() for _ in v]
         pn = np.zeros(3, dtype=np.double)
         discarded = 0
-        dupefaces = np.sum([np.isin(self.faces, x).all(1) for x in self.faces],
-                           axis=1) > 1
+        doublefaces = np.zeros(len(f), dtype=bool)
+        # dupefaces = np.sum([np.isin(self.faces, x).all(1) for x in self.faces],
+        #                    axis=1) > 1
         
-        for numf, (face, dupe) in enumerate(zip(self.faces, dupefaces)):
-            if dupe:
+        for numf, face in enumerate(self.faces):
+            if doublefaces[numf]:
+                discarded += 1
+                continue
+            dupe = np.isin(self.faces[numf+1:], face).all(1)
+            if np.any(dupe):
+                doublefaces[numf+1:][dupe] = True
                 discarded += 1
                 continue
             c1 = np.array(v[face[0]], dtype = np.double)
