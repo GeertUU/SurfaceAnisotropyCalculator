@@ -1,5 +1,5 @@
 '''
-    Copyright (C) 2023-2025  Geert Schulpen
+    Copyright (C) 2023-2026  Geert Schulpen
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -29,7 +29,7 @@ cmdclass.update({ 'build_ext': build_ext })
 
 setup(
     name = 'surfaceanisotropycalculator',
-    version = '0.5.11',
+    version = '0.5.12',
 
     url='https://github.com/GeertUU/SurfaceAnisotropyCalculator',
     author='Geert',

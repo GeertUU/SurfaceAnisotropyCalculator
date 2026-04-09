@@ -1,5 +1,5 @@
 '''
-    Copyright (C) 2023-2025  Geert Schulpen
+    Copyright (C) 2023-2026  Geert Schulpen
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 '''
 
 
-__version__ = '0.5.11'
+__version__ = '0.5.12'
 
 from surfaceanisotropycalculator.anisotropyclass import MeshCalculator_legacy, MeshCalculator
 from surfaceanisotropycalculator.stackanalysis import MeshFromFile, MeshFromStack, MeshFromLif, MeshFromImageStack
