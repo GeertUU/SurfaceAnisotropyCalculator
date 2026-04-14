@@ -636,7 +636,7 @@ class MeshCalculator(MeshCalculator_legacy):
         normals = np.zeros((len(valid_faces), 3), dtype=np.double)
         pn_batch = np.zeros((len(valid_faces), 3), dtype=np.double)
         
-        CythonFunctions.getnormals_batch(valid_faces, v, pn_batch)
+        CythonFunctions.getnormals(valid_faces, v, pn_batch)
         
         # Filter out zero-area faces
         zero_area_mask = ~np.all(pn_batch == 0, axis=1)
