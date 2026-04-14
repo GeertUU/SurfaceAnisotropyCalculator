@@ -18,7 +18,7 @@ cimport numpy as np
 from libc.math cimport sqrt
 
 
-cpdef None getnormal(double[:]p0, double[:]p1, double[:]p2, double[:] result):
+cpdef int getnormal(double[:]p0, double[:]p1, double[:]p2, double[:] result):
     cdef double xa, ya, za, xb, yb, zb
     xa = p2[0] - p0[0]
     ya = p2[1] - p0[1]
@@ -29,6 +29,7 @@ cpdef None getnormal(double[:]p0, double[:]p1, double[:]p2, double[:] result):
     result[0] = ya * zb - za * yb
     result[1] = za * xb - xa * zb
     result[2] = xa * yb - ya * xb
+    return 1
 
 
 # cpdef int initfunc(long int[:,:] face, double[:,:] vert, long int[:,:] f, double[:,:] v):
@@ -36,7 +37,7 @@ cpdef None getnormal(double[:]p0, double[:]p1, double[:]p2, double[:] result):
 #     vfaces = 
 
 
-cpdef None getinternalangles(long int[:,:] f, double[:,:] v, double[:,:] result):
+cpdef int getinternalangles(long int[:,:] f, double[:,:] v, double[:,:] result):
     cdef long int i, lenf, v0, v1, v2
     cdef double[:] p0, p1, p2
     cdef double dxa, dya, dza, dxb, dyb, dzb, dxc, dyc, dzc, a1, a2, a3, temp
@@ -69,9 +70,10 @@ cpdef None getinternalangles(long int[:,:] f, double[:,:] v, double[:,:] result)
         temp /= sqrt(dxb*dxb + dyb*dyb + dzb*dzb)
         temp /= sqrt(dxc*dxc + dyc*dyc + dzc*dzc)
         result[i,2] = temp
+    return 1
         
         
-cpdef None getnormals(long int[:,::1] f, double[:,::1] v, double[:,::1] result):
+cpdef int getnormals(long int[:,::1] f, double[:,::1] v, double[:,::1] result):
     cdef long int i, lenf, v0, v1, v2
     cdef double[3] p1
     cdef double[3] p2
@@ -93,3 +95,4 @@ cpdef None getnormals(long int[:,::1] f, double[:,::1] v, double[:,::1] result):
         result[i,0] = pn[0]
         result[i,1] = pn[1]
         result[i,2] = pn[2]
+    return 1
