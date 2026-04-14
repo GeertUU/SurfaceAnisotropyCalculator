@@ -75,9 +75,9 @@ cpdef int getinternalangles(long int[:,:] f, double[:,:] v, double[:,:] result):
         
 cpdef int getnormals(long int[:,::1] f, double[:,::1] v, double[:,::1] result):
     cdef long int i, lenf, v0, v1, v2
+    cdef double[3] p0
     cdef double[3] p1
     cdef double[3] p2
-    cdef double[3] p3
     cdef double[3] pn
     lenf = f.shape[0]
     for i in range(lenf):
