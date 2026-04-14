@@ -600,8 +600,8 @@ class MeshCalculator(MeshCalculator_legacy):
         None.
 
         """
-        self.verteces = v
-        self.faces = f
+        self.verteces = np.astype(v, np.double)
+        self.faces = np.astype(f, np.long)
 
         # Collect the maximum and minimum values along the different axes
         self.maxs = np.max(self.verteces, axis=0)
@@ -632,8 +632,8 @@ class MeshCalculator(MeshCalculator_legacy):
         valid_faces = self.faces[valid_mask]
         
         # Now process only valid faces
-        fs = np.zeros((len(valid_faces), 3), dtype=np.long)
-        normals = np.zeros((len(valid_faces), 3), dtype=np.double)
+        # fs = np.zeros((len(valid_faces), 3), dtype=np.long)
+        # normals = np.zeros((len(valid_faces), 3), dtype=np.double)
         pn_batch = np.zeros((len(valid_faces), 3), dtype=np.double)
         
         CythonFunctions.getnormals(valid_faces, v, pn_batch)
@@ -682,7 +682,7 @@ class MeshCalculator(MeshCalculator_legacy):
         #remove all empty rows
         # fs = fs[:numf - discarded + 1]
         # normals = normals[:numf - discarded + 1]
-        
+
         
         
         fneighbors = [set() for _ in fs]
