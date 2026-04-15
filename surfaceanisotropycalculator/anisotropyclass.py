@@ -112,7 +112,7 @@ class MeshCalculator_legacy():
         vfaces = [set() for _ in v]
         vneighbors = [set() for _ in v]
         vedges = [[] for _ in v]
-        fneighbors = [set() for _ in f]
+        fneighbors = [set() for _ in f] 
         fedges = [[] for _ in f]
         for numf, face in enumerate(self.faces):
             thisface = list(face)
@@ -600,8 +600,8 @@ class MeshCalculator(MeshCalculator_legacy):
         None.
 
         """
-        self.verteces = v
-        self.faces = f
+        self.verteces = np.astype(v, np.double)
+        self.faces = np.astype(f, np.long)
 
         # Collect the maximum and minimum values along the different axes
         self.maxs = np.max(self.verteces, axis=0)
@@ -610,43 +610,41 @@ class MeshCalculator(MeshCalculator_legacy):
         # To keep track of what has been calculated we initialize an empty dict
         self.resetcalc()
         
-        fs = np.zeros(f.shape, dtype = np.long)
-        normals = np.zeros(f.shape, dtype = np.double)
+        
+        # Fast vectorized duplicate detection
+        sorted_faces = np.sort(self.faces, axis=1)
+        _, inverse_indices = np.unique(sorted_faces, axis=0, return_inverse=True)
+        
+        # Count how many times each unique face appears
+        counts = np.bincount(inverse_indices)
+        
+        # A face is valid only if it appears exactly once
+        valid_mask = counts[inverse_indices] == 1
+        
+        # Filter valid faces
+        valid_faces = self.faces[valid_mask]
+        
+        # Now process only valid faces
+        pn_batch = np.zeros((len(valid_faces), 3), dtype=np.double)
+        
+        CythonFunctions.getnormals(valid_faces, v, pn_batch)
+        
+        # Filter out zero-area faces
+        zero_area_mask = ~np.all(pn_batch == 0, axis=1)
+        fs = valid_faces[zero_area_mask]
+        normals = pn_batch[zero_area_mask]
+        
+        # Update vfaces and vneighbors for remaining valid faces
         vfaces = [set() for _ in v]
         vneighbors = [set() for _ in v]
-        pn = np.zeros(3, dtype=np.double)
-        discarded = 0
-        doublefaces = np.zeros(len(f), dtype=bool)
-        # dupefaces = np.sum([np.isin(self.faces, x).all(1) for x in self.faces],
-        #                    axis=1) > 1
         
-        for numf, face in enumerate(self.faces):
-            if doublefaces[numf]:
-                discarded += 1
-                continue
-            dupe = np.isin(self.faces[numf+1:], face).all(1)
-            if np.any(dupe):
-                doublefaces[numf+1:][dupe] = True
-                discarded += 1
-                continue
-            c1 = np.array(v[face[0]], dtype = np.double)
-            c2 = np.array(v[face[1]], dtype = np.double)
-            c3 = np.array(v[face[2]], dtype = np.double)
-            test = CythonFunctions.getnormal(c1, c2, c3, pn)
-            #if the area of the face is 0 we do not want to include it
-            if pn[0]==pn[1]==pn[2]==0: 
-                discarded += 1
-                continue
+        for index, face in enumerate(fs):
             for v1, v2, v3 in ntuples(face, 3):
-                #register the face with the vertex
-                vfaces[v1].add(numf - discarded)
-                vneighbors[v1].update([v2,v3])
-            fs[numf - discarded] = face
-            normals[numf - discarded] = pn
-
-        #remove all empty rows
-        fs = fs[:numf - discarded + 1]
-        normals = normals[:numf - discarded + 1]
+                vfaces[v1].add(index)  # Add face index
+                vneighbors[v1].update([v2, v3])
+                
+        
+        
         fneighbors = [set() for _ in fs]
         #create dataframe for vertices
         self.v = pd.DataFrame(v, columns=["x","y","z"])
@@ -696,7 +694,7 @@ class MeshCalculator(MeshCalculator_legacy):
         fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=np.long)
         norms = np.zeros(fs.shape, dtype=np.double)
         vs = self.v.loc[:,["x","y","z"]].to_numpy(dtype=np.double)
-        test = CythonFunctions.getnormals(fs, vs, norms)
+        CythonFunctions.getnormals(fs, vs, norms)
         norms = pd.DataFrame(norms, columns=["xn","yn","zn"])
         self.f = self.f.join(norms)
         self._properties["normals"] = True
@@ -714,7 +712,7 @@ class MeshCalculator(MeshCalculator_legacy):
         fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=np.long)
         angles = np.zeros(fs.shape, dtype=np.double)
         vs = self.v.loc[:,["x","y","z"]].to_numpy(dtype=np.double)
-        test = CythonFunctions.getinternalangles(fs, vs, angles)
+        CythonFunctions.getinternalangles(fs, vs, angles)
         angles = pd.DataFrame(np.arccos(angles), columns=["a1","a2","a3"])
         self.f = self.f.join(angles)
         self._properties["internal angles"] = True

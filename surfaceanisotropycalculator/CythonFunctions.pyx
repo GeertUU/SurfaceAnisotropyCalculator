@@ -19,6 +19,7 @@ from libc.math cimport sqrt
 
 
 cpdef int getnormal(double[:]p0, double[:]p1, double[:]p2, double[:] result):
+    cdef double xa, ya, za, xb, yb, zb
     xa = p2[0] - p0[0]
     ya = p2[1] - p0[1]
     za = p2[2] - p0[2]
@@ -29,6 +30,7 @@ cpdef int getnormal(double[:]p0, double[:]p1, double[:]p2, double[:] result):
     result[1] = za * xb - xa * zb
     result[2] = xa * yb - ya * xb
     return 1
+
 
 # cpdef int initfunc(long int[:,:] face, double[:,:] vert, long int[:,:] f, double[:,:] v):
 #     cdef long int[:] vfaces, vneighbors, fneighbors
@@ -71,29 +73,21 @@ cpdef int getinternalangles(long int[:,:] f, double[:,:] v, double[:,:] result):
     return 1
         
         
-cpdef int getnormals(long int[:,:] f, double[:,:] v, double[:,:] result):
+cpdef int getnormals(long int[:,::1] f, double[:,::1] v, double[:,::1] result):
     cdef long int i, lenf, v0, v1, v2
-    cdef double[:] p0, p1, p2, pn
-    cdef double xa, ya, za, xb, yb, zb
-    p0 = np.zeros(3, dtype=np.double)
-    p1 = np.zeros(3, dtype=np.double)
-    p2 = np.zeros(3, dtype=np.double)
-    pn = np.zeros(3, dtype=np.double)
+    cdef double[3] p0
+    cdef double[3] p1
+    cdef double[3] p2
+    cdef double[3] pn
     lenf = f.shape[0]
     for i in range(lenf):
         v0 = f[i,0]
         v1 = f[i,1]
         v2 = f[i,2]
-        p0 = v[v0,0:3]
-        p1 = v[v1,0:3]
-        p2 = v[v2,0:3]
+        p0[0] = v[v0,0]; p0[1] = v[v0,1]; p0[2] = v[v0,2]
+        p1[0] = v[v1,0]; p1[1] = v[v1,1]; p1[2] = v[v1,2]
+        p2[0] = v[v2,0]; p2[1] = v[v2,1]; p2[2] = v[v2,2]
         getnormal(p0, p1, p2, pn)
-        # xa = p2[0] - p0[0]
-        # ya = p2[1] - p0[1]
-        # za = p2[2] - p0[2]
-        # xb = p1[0] - p0[0]
-        # yb = p1[1] - p0[1]
-        # zb = p1[2] - p0[2]
         result[i,0] = pn[0]
         result[i,1] = pn[1]
         result[i,2] = pn[2]
