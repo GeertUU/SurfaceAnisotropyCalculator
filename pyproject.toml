@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools", "cython", "numpy"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "surfaceanisotropycalculator"
+version = "0.6.3"
+dependencies = ["numpy",
+				"libigl",
+				"pandas",
+				"scikit-image",
+				"readlif",
+				"Cython",
+				]
+
+[tool.setuptools]
+ext-modules = [
+    {name = "CythonFunctions", sources = ["surfaceanisotropycalculator/CythonFunctions.pyx"]}
+]
