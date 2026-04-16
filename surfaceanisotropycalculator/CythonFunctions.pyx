@@ -37,18 +37,20 @@ cpdef int getnormal(double[:]p0, double[:]p1, double[:]p2, double[:] result):
 #     vfaces = 
 
 
-cpdef int getinternalangles(long int[:,:] f, double[:,:] v, double[:,:] result):
+cpdef int getinternalangles(long int[:,::1] f, double[:,::1] v, double[:,::1] result):
     cdef long int i, lenf, v0, v1, v2
-    cdef double[:] p0, p1, p2
+    cdef double[3] p0
+    cdef double[3] p1
+    cdef double[3] p2
     cdef double dxa, dya, dza, dxb, dyb, dzb, dxc, dyc, dzc, a1, a2, a3, temp
     lenf = f.shape[0]
     for i in range(lenf):
         v0 = f[i,0]
         v1 = f[i,1]
-        v2 = f[i,2]        
-        p0 = v[v0,0:3]
-        p1 = v[v1,0:3]
-        p2 = v[v2,0:3]
+        v2 = f[i,2]
+        p0[0] = v[v0,0]; p0[1] = v[v0,1]; p0[2] = v[v0,2]
+        p1[0] = v[v1,0]; p1[1] = v[v1,1]; p1[2] = v[v1,2]
+        p2[0] = v[v2,0]; p2[1] = v[v2,1]; p2[2] = v[v2,2]
         dxa = p1[0] - p0[0]
         dya = p1[1] - p0[1]
         dza = p1[2] - p0[2]
