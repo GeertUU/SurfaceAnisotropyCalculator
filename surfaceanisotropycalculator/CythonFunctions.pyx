@@ -37,7 +37,7 @@ cpdef int getnormal(double[:]p0, double[:]p1, double[:]p2, double[:] result):
 #     vfaces = 
 
 
-cpdef int getinternalangles(long int[:,::1] f, double[:,::1] v, double[:,::1] result):
+cpdef int getinternalangles(long int[:,:] f, double[:,:] v, double[:,::1] result):
     cdef long int i, lenf, v0, v1, v2
     cdef double[3] p0
     cdef double[3] p1
