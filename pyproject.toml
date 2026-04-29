@@ -12,6 +12,12 @@ dependencies = ["numpy",
 				"readlif",
 				"Cython",
 				]
+authors = [
+	{name = "Geert Schulpen", email = "g.h.a.schulpen@uu.nl"}
+	]
+readme = "README.md"
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
 
 [tool.setuptools]
 ext-modules = [
