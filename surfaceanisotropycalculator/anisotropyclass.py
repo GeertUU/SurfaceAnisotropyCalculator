@@ -710,8 +710,10 @@ class MeshCalculator(MeshCalculator_legacy):
 
         """
         fs = self.f.loc[:,["v1","v2","v3"]].to_numpy(dtype=np.long)
+        fs = np.ascontiguousarray(fs, dtype=np.long)
         angles = np.zeros(fs.shape, dtype=np.double)
         vs = self.v.loc[:,["x","y","z"]].to_numpy(dtype=np.double)
+        vs = np.ascontiguousarray(vs, dtype=np.double)
         CythonFunctions.getinternalangles(fs, vs, angles)
         angles = pd.DataFrame(np.arccos(angles), columns=["a1","a2","a3"])
         self.f = self.f.join(angles)

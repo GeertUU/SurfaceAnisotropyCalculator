@@ -14,30 +14,21 @@
 
 
 
-from setuptools import setup, find_packages
-from setuptools import Extension
+from setuptools import Extension, setup, find_packages
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 import numpy
 
-cmdclass = { }
-ext_modules = [ ]
-ext_modules += [
+
+ext_modules = [
     Extension("CythonFunctions", [ "surfaceanisotropycalculator/CythonFunctions.pyx" ], include_dirs=[numpy.get_include()]),
 ]
-cmdclass.update({ 'build_ext': build_ext })
+cmdclass = { 'build_ext': build_ext }
 
 setup(
-    name = 'surfaceanisotropycalculator',
-    version = '0.6.2',
-
-    url='https://github.com/GeertUU/SurfaceAnisotropyCalculator',
-    author='Geert',
-    author_email='g.h.a.schulpen@uu.nl',
-
     packages=find_packages(include=["surfaceanisotropycalculator", "surfaceanisotropycalculator.*"]),
     cmdclass = cmdclass,
-    ext_modules=ext_modules,
+    ext_modules=cythonize(ext_modules),
     install_requires=[
         'numpy',
         'libigl',

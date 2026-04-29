@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools", "cython", "numpy"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "surfaceanisotropycalculator"
+version = "0.6.4"
+dependencies = ["numpy",
+				"libigl",
+				"pandas",
+				"scikit-image",
+				"readlif",
+				"Cython",
+				]
+authors = [
+	{name = "Geert Schulpen", email = "g.h.a.schulpen@uu.nl"}
+	]
+readme = "README.md"
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
+
+[tool.setuptools]
+ext-modules = [
+    {name = "CythonFunctions", sources = ["surfaceanisotropycalculator/CythonFunctions.pyx"]}
+]
